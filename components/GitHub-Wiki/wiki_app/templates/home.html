@@ -1,0 +1,55 @@
+{% extends "base.html" %}{% block content %}
+<div class="eyebrow">READ THE CODE, KEEP THE EVIDENCE</div><h1>从源码出发，辅助理解项目。</h1><p class="muted">沿着架构、关键流程与源码证据阅读，让每次理解都能回到具体代码。</p>
+<div class="grid"><section class="card"><h2>添加公开 GitHub 仓库</h2><form id="import"><label for="url">仓库地址</label><input id="url" type="url" required placeholder="https://github.com/owner/repo"><label for="ref">分支、标签或 commit（可选）</label><input id="ref" type="text" placeholder="留空使用默认分支"><p><button id="submit">获取源码并生成 Wiki</button></p><div id="notice" role="status"></div></form></section>
+<section class="card"><span class="pill">{{ '模型深度阅读' if config.enabled else '源码检索模式' }}</span><h2>让结论可核对</h2><p>每个版本保留源码快照和文件行号。旧回答始终对应当时的代码版本。</p><p class="muted">{% if config.enabled %}生成会向已配置的模型发送选定源码片段，知识研究与配图审核会分阶段调用模型，可在任务页取消。{% else %}当前不调用模型。生成按主题整理的证据页，问答返回匹配源码；配置模型后可获得中文综合解释。{% endif %}</p><a href="/settings">查看模型配置 →</a></section></div>
+<section class="card" id="product-scope"><h2>适用范围与当前能力</h2>
+<p>支持公开 GitHub 仓库：导入后自动采集固定提交、分析静态结构，在模型可用时生成 Wiki、配图并审核。不支持私有仓库、本地目录，不执行仓库代码。</p>
+<p><strong>可用基础能力：</strong>源码快照、文件与行号定位、引用校验、任务取消与恢复、图形展示和导出。Python、JavaScript / TypeScript 有专门静态解析；其他语言主要提供原文与检索，不保证同等结构精度。</p>
+<p><strong>仍需人工核对：</strong>摘要、职责划分、跨文件调用、条件分支和架构图可能遗漏或出错。引用有效只代表原文匹配，自动审核通过不代表结论正确。当前不能保证一键准确解释任意仓库。</p>
+<details><summary>容量、失败处理与实测边界</summary><p>采集受压缩包、文本总量、单文件和文件数限制；二进制、生成文件等可能跳过，实际覆盖以版本记录为准。已实测 1,642 个文本文件、约 22 MB 的快照完成自动流程，但内容质量未全部通过，容量上限不是质量保证。</p><p>局部失败保留其他有效成果，显示具体规则、原因和重试入口；影响整个阶段的错误才停止该阶段。临时服务错误有界重试，没有可用模型时保留源码阅读。模型生成会分阶段调用，耗时与费用随仓库和配置变化。</p></details></section>
+<section class="card"><h2>我的仓库</h2>{% for repo in repos %}<div class="row spread" style="padding:16px 0;border-bottom:1px solid var(--line)"><div><b>{{ repo.url.removeprefix('https://github.com/') }}</b><div class="muted"><small>{{ repo.ref or '默认分支' }}</small></div></div><div class="row">{% if repo.current %}<a class="button" href="/versions/{{ repo.current }}">阅读 Wiki</a>{% endif %}<button class="secondary" onclick="build('{{ repo.id }}')">{{ '检查更新' if repo.current else '生成 Wiki' }}</button><button class="secondary" onclick="previewDeletion('{{ repo.id }}')">删除数据</button></div></div>{% else %}<p class="muted">还没有仓库。从上方添加一个，开始阅读。</p>{% endfor %}</section>
+{% if jobs %}<section class="card"><h2>最近任务</h2>{% for j in jobs %}<p><a href="/jobs/{{ j.id }}">{{ {'build':'生成 Wiki','architecture':'分析源码','knowledge':'研究架构与正文','page_diagrams':'生成与审核配图','delete_repo':'删除仓库数据','chat':'仓库讨论'}.get(j.kind,'源码问答') }} · {{ j.state }}</a>{% if j.error %} <small class="error">{{ j.error }}</small>{% endif %}</p>{% endfor %}</section>{% endif %}
+<dialog id="delete-dialog" aria-labelledby="delete-title" style="max-width:620px;width:90%;background:var(--panel,#252525);color:inherit;border:1px solid #777;border-radius:12px;padding:24px">
+<h2 id="delete-title">永久删除仓库数据</h2><p id="delete-summary"></p>
+<p>将删除源码快照、全部历史 Wiki、配图、检索索引和生成任务。无法撤销；重新导入会重新生成。</p>
+<p>保留 Wiki 问答及引用快照、平台独立会话、已有备份与导出、无法确认归属的共享缓存和笔记。这些内容仍占用空间。</p>
+<p>文件清理后释放空间；SQLite 空闲页在队列空闲时整理，不能把保留内容计入释放量。</p>
+<div id="delete-busy" role="status"></div><button id="delete-cancel-jobs" hidden>取消相关任务</button>
+<label for="delete-name">再次确认：输入完整仓库名称</label><input id="delete-name" autocomplete="off">
+<p id="delete-error" role="alert"></p><div class="row"><button id="delete-confirm" disabled>永久删除仓库数据</button>
+<button class="secondary" onclick="document.getElementById('delete-dialog').close()">保留仓库</button></div></dialog>
+{% endblock %}{% block scripts %}<script>
+async function build(id){try{let j=await api('/api/repos/'+id+'/build');location.href='/jobs/'+j.job_id}catch(e){showError(e)}}
+document.getElementById('import').onsubmit=async e=>{e.preventDefault();let b=document.getElementById('submit');b.disabled=true;try{let r=await api('/api/repos',{url:document.getElementById('url').value,ref:document.getElementById('ref').value});await build(r.repo_id)}catch(e){showError(e)}finally{b.disabled=false}}
+let deletionPreview=null;
+async function previewDeletion(id){
+ try{
+  const r=await fetch('/api/repos/'+id+'/deletion-preview'); const data=await r.json();
+  if(!r.ok)throw Error(data.failure?.message||data.detail||'无法读取删除范围');
+  deletionPreview=data;
+  document.getElementById('delete-summary').textContent=data.name+' · '+data.versions+' 个版本 · 文件约 '+(data.file_bytes/1048576).toFixed(1)+' MiB';
+  document.getElementById('delete-name').value='';
+  document.getElementById('delete-error').textContent='';
+  document.getElementById('delete-busy').textContent=data.active_jobs.length?'有 '+data.active_jobs.length+' 个活动任务，请先取消并等待退出。':data.deletion_state?'此前清理未完成，可确认后继续。':'当前没有活动任务。';
+  document.getElementById('delete-cancel-jobs').hidden=!data.active_jobs.length;
+  document.getElementById('delete-confirm').disabled=true;
+  document.getElementById('delete-dialog').showModal();
+ }catch(e){showError(e)}
+}
+document.getElementById('delete-name').oninput=e=>{
+ document.getElementById('delete-confirm').disabled=!deletionPreview||e.target.value!==deletionPreview.name||deletionPreview.active_jobs.length>0;
+};
+document.getElementById('delete-cancel-jobs').onclick=async()=>{
+ for(const job of deletionPreview.active_jobs)await api('/api/jobs/'+job+'/cancel');
+ document.getElementById('delete-dialog').close();await previewDeletion(deletionPreview.repo_id);
+};
+document.getElementById('delete-confirm').onclick=async()=>{
+ const b=document.getElementById('delete-confirm');b.disabled=true;
+ try{
+  const r=await fetch('/api/repos/'+deletionPreview.repo_id,{method:'DELETE',headers:{'Content-Type':'application/json','X-Wiki-Token':token},
+   body:JSON.stringify({name:document.getElementById('delete-name').value,preview_token:deletionPreview.preview_token})});
+  const data=await r.json();if(!r.ok)throw Error(data.failure?.message||data.detail||'删除未开始');
+  location.href='/jobs/'+data.job_id;
+ }catch(e){document.getElementById('delete-error').textContent=e.message;b.disabled=false}
+};
+</script>{% endblock %}

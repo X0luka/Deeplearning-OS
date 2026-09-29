@@ -1,0 +1,29 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GitHub Wiki · 源码阅读室</title>
+<meta name="wiki-write-token" content="{{ token }}"><meta name="aos-appearance"><script src="/static/appearance.js?v=2"></script><link rel="stylesheet" href="/static/appearance.css?v=2"><style>
+:root{--ink:var(--aos-text);--muted:var(--aos-muted);--line:var(--aos-line);--accent:var(--aos-action);--paper:var(--aos-bg)}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.75 var(--aos-font)}header{border-bottom:1px solid var(--line);padding:18px 4vw;background:var(--aos-panel);display:flex;justify-content:space-between;align-items:center;gap:20px}header strong{font-size:20px;letter-spacing:.5px}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}nav{display:flex;gap:24px}main{max-width:1280px;margin:auto;padding:36px 4vw}h1{font-size:28px;line-height:1.3;margin:12px 0}h2{font-size:21px;line-height:1.4}h3{font-size:17px}.eyebrow{color:var(--accent);font-size:12px;letter-spacing:2px}.muted{color:var(--muted)}.card{padding:26px;border:1px solid var(--line);border-radius:12px;background:var(--aos-panel);margin:22px 0}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.grid .card{margin:0}.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.spread{justify-content:space-between}.pill{font-size:12px;background:var(--aos-subtle);padding:5px 12px;border-radius:20px;display:inline-block}.warning{background:var(--aos-subtle);color:var(--aos-text);padding:14px 18px;border-radius:8px}.error{color:var(--aos-text)}input,textarea,select{font:inherit;padding:11px 12px;border:1px solid var(--aos-line);border-radius:7px;max-width:100%;background:var(--aos-panel)}input[type=text],input[type=url],textarea{width:100%}button,.button{font:inherit;cursor:pointer;color:var(--aos-on-action);background:var(--accent);border:0;border-radius:7px;padding:10px 18px;display:inline-block}button:disabled{opacity:.5}.secondary{background:var(--aos-subtle);color:var(--ink)}label{display:block;margin:15px 0 5px}small{font-size:12px}pre{background:var(--aos-subtle);padding:16px;overflow:auto;border-radius:8px;font:12px/1.65 ui-monospace,monospace;max-height:480px}code{overflow-wrap:anywhere}.layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:30px}.toc{align-self:start;position:sticky;top:20px}.toc a{display:block;padding:9px 12px;margin:3px 0;border-radius:6px}.toc a.active{background:var(--aos-subtle);font-weight:600}.prose{overflow-wrap:anywhere}.prose a{border-bottom:1px solid var(--aos-line)}.prose h1{font-size:28px}.prose h2{margin-top:30px}.prose li{margin:8px 0}table{border-collapse:collapse;width:100%}td,th{text-align:left;border-bottom:1px solid var(--line);padding:12px 5px}summary{cursor:pointer}footer{margin:32px 0;color:var(--muted);font-size:12px}#notice{white-space:pre-wrap} [hidden]{display:none!important}@media(max-width:800px){.grid,.layout{grid-template-columns:1fr}.toc{position:static}header{align-items:flex-start;flex-direction:column}nav{gap:18px}main{padding:24px 5vw}h1{font-size:28px}.card{padding:20px}}
+
+header{background:var(--aos-sidebar);padding:16px 32px}header nav{align-items:center;flex-wrap:wrap;gap:20px;font-size:13px}header strong{color:var(--aos-text);font-size:18px;letter-spacing:-.3px}
+.card{box-shadow:none;border-radius:12px}.prose{font-size:15px;line-height:1.9}.prose a{text-decoration:underline}.toc a.active{background:var(--aos-selected)}
+.warning{background:var(--aos-warning-bg);color:var(--aos-warning)}.error{color:var(--aos-error)}button:hover,.button:hover{filter:brightness(.94)}
+pre{background:var(--aos-code);color:var(--aos-text)}input,select,textarea{border-color:var(--aos-control)}
+@media(max-width:800px){header{padding:18px 20px}header nav{gap:12px}.aos-theme-note{display:none}}
+</style></head><body><header><a href="/"><strong>GitHub Wiki</strong></a><nav><a href="/">仓库</a><a href="/history">阅读历史</a><a href="/settings">模型设置</a><a href="{{ assistant_host }}" target="_blank" rel="noopener">AgentOS ↗</a><span class="aos-theme-note">外观随 AgentOS</span></nav></header><main>{% block content %}{% endblock %}<footer>本地源码阅读室 · 固定版本证据 · 产品数据保存在本机</footer></main>
+<script>
+let token={{ token|tojson }};
+async function api(path,body){
+ const options=()=>({method:'POST',headers:{'Content-Type':'application/json','X-Wiki-Token':token},body:body===undefined?undefined:JSON.stringify(body)});
+ let r=await fetch(path,options());
+ if(r.status===403 && await r.clone().text()==='write_token_required'){
+  // The middleware rejected this write before executing it.
+  const page=await fetch('/',{cache:'no-store',credentials:'same-origin'});
+  if(!page.ok)throw Error('页面授权更新失败，请刷新后重试；输入内容仍保留');
+  const fresh=new DOMParser().parseFromString(await page.text(),'text/html').querySelector('meta[name="wiki-write-token"]')?.content;
+  if(!fresh)throw Error('页面授权已过期，请刷新后重试；输入内容仍保留');
+  token=fresh;
+  r=await fetch(path,options());
+ }
+ if(!r.ok){const t=await r.text();throw Error(t==='write_token_required'?'页面授权已过期，请刷新后重试；输入内容仍保留':t)}
+ return r.json();
+}
+function showError(e){let n=document.getElementById('notice');if(n){n.textContent='操作未完成：'+e.message;n.className='error'}}
+</script>{% block scripts %}{% endblock %}{% if version is defined and not (item is defined and item.source_deleted) %}{% include "chat.html" %}{% endif %}</body></html>

@@ -1,0 +1,68 @@
+{% extends "base.html" %}{% block content %}
+{% if desktop %}
+<div class="top"><div><div class="eyebrow">Deeplearning-OS</div><h1>工作空间</h1><div class="muted">从阅读开始，让知识自然连接。</div></div></div>
+<section class="card"><div class="row"><b>桌面会话</b><button onclick="if(window.chrome?.webview)window.chrome.webview.postMessage('exit');else alert('请在 Deeplearning-OS 主窗口中退出。')">退出 Deeplearning-OS</button></div><p class="muted">关闭主窗口将停止本次启动的应用；独立运行的应用会保留。</p>
+{% for card in cards %}<div class="row" style="margin:12px 0"><b>{{ card.product.name }}</b><span id="desktop-state-{{ card.product.id }}">启动中</span><a data-product-link class="button" href="/products/{{ card.product.id }}/open" target="_blank" rel="noopener">打开</a><button id="desktop-retry-{{ card.product.id }}" hidden onclick="desktopRetry('{{ card.product.id }}')">重试</button></div>{% endfor %}</section>
+<script>
+async function desktopRetry(id){await fetch('/api/v1/apps/'+id+'/start',{method:'POST',headers:{'X-AOS-Token':{{ token|tojson }}}});await desktopStates();}
+async function desktopStates(){for(const id of {{ cards|map(attribute='product.id')|list|tojson }}){try{const r=await fetch('/api/v1/apps/'+id+'/runtime');if(!r.ok)continue;const s=await r.json();document.getElementById('desktop-state-'+id).textContent=s.state==='failed'?'启动失败：'+s.error:s.state==='ready'?(s.ownership==='external'?'独立运行':'运行中'):'启动中';document.getElementById('desktop-retry-'+id).hidden=s.state!=='failed';}catch(_){document.getElementById('desktop-state-'+id).textContent='连接中断';}}}
+desktopStates();setInterval(desktopStates,2000);
+</script>
+{% endif %}
+{% if not desktop %}
+<div class="top"><div><div class="eyebrow">Your local workbench</div><h1>工作台</h1><div class="muted">产品继续独立运行，会话在这里汇集。</div></div>{% if product %}<a data-product-link class="button" href="/products/{{ product.id }}/open" target="_blank" rel="noopener">打开原产品 ↗</a>{% endif %}</div>
+{% if not cards %}<section class="card"><h2>档案工作台</h2><p>当前未加载产品扩展。可继续查看已有档案。</p></section>{% endif %}<div class="grid">{% for card in cards %}<section class="card"><div class="row"><h2>{{ card.product.name }}</h2><span class="pill {{ card.health.status }}">{{ {'ok':'服务正常','degraded':'部分依赖异常','offline':'尚未连接','disabled':'未启用','starting':'启动中','stopping':'正在暂停','failed':'启动失败'}.get(card.health.status,card.health.status) }}</span></div><p class="muted">{{ card.product.api_url }}</p><p class="small muted">{{ card.health.reason or '独立运行 · 会话自动归档' }}</p>{% if card.manual %}
+<div class="row" style="margin:12px 0"><button type="button" role="switch" aria-label="启动 {{ card.product.name }}" aria-checked="{{ 'true' if card.runtime.state in ['starting','ready'] else 'false' }}" onclick="toggleProduct('{{ card.product.id }}', this)" {% if card.runtime.state == 'stopping' %}disabled{% endif %}>{{ '暂停接入' if card.runtime.state in ['starting','ready'] else '启动 ' ~ card.product.name }}</button><span class="small muted">关闭仅暂停接入，独立服务保留；重启工作台后默认关闭。</span></div>
+{% if card.runtime.error %}<p class="notice">启动未完成：{{ card.runtime.error }}。请检查依赖配置后手动重试。</p>{% endif %}
+{% endif %}{% if cards|length > 1 %}<a data-product-link class="button" href="/products/{{ card.product.id }}/open" target="_blank" rel="noopener">打开 {{ card.product.name }} ↗</a>{% endif %}</section>{% endfor %}</div>
+{% endif %}
+<section class="card row"><b>当前分类归档 {{ result.total }} 条</b><button id="sync" onclick="syncNow()" {% if not sync_products %}disabled{% endif %}>同步会话</button><span id="notice" class="small muted">仅同步已启用产品</span></section>
+<section class="card"><div class="top"><div><h2>会话档案</h2><span class="muted small">原网页会话长期保留。诊断调用不列入此处。</span></div><div class="row"><a href="/?source=product_ui">网页会话</a><a href="/?source=legacy_unknown">旧记录 · 来源未知</a></div></div>
+<form class="row archive-filters" method="get"><input type="hidden" name="source" value="{{ source }}"><select name="product_id" aria-label="产品筛选"><option value="">全部产品</option>{% for p in archive_products %}<option value="{{ p.id }}" {% if product_id==p.id %}selected{% endif %}>{{ p.name }}</option>{% endfor %}</select><input name="thread" value="{{ thread }}" placeholder="按会话 ID 筛选" aria-label="会话 ID"><input name="q" value="{{ q }}" placeholder="搜索问题关键词" aria-label="问题关键词" maxlength="200"><label>从 <input type="date" name="date_from" value="{{ date_from }}" aria-label="开始日期（UTC）"></label><label>至 <input type="date" name="date_to" value="{{ date_to }}" aria-label="结束日期（UTC）"></label><button>搜索</button><a href="/?source={{ source }}">清除筛选</a><span class="small muted">按 UTC 日期筛选，时间以本地时区显示</span></form>
+{% if result["items"] %}<div class="table-scroll" role="region" aria-label="可横向滚动的记录表格" tabindex="0"><table><thead><tr><th>产品</th><th>问题</th><th>状态</th><th>时间</th></tr></thead><tbody>{% for item in result["items"] %}<tr><td class="small">{{ item.product }}</td><td><a href="/history/{{ item.archive_id }}">{{ item.query[:110] }}</a>{% if item.rollback_detected %}<div class="small notice">检测到源数据回退，旧档案已保留</div>{% endif %}</td><td><span class="pill {{ item.status }}">{{ {'completed':'已完成','succeeded':'已完成','success':'已完成','failed':'失败','error':'失败','running':'进行中','queued':'排队中','cancelled':'已取消','interrupted':'已中断'}.get(item.status,item.status) }}</span></td><td class="small muted"><time datetime="{{ item.updated_at }}">{{ item.updated_at }}</time></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty">尚无该分类的归档记录。<br>启用产品后，在原网页问答即可同步；关闭的产品保留旧档案。</div>{% endif %}
+<div class="pager">{% if result.page > 1 %}<a href="/?source={{ source }}&page={{ result.page-1 }}&thread={{ thread|urlencode }}&product_id={{ product_id|urlencode }}&q={{ q|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}">← 上一页</a>{% endif %}<span class="muted small">第 {{ result.page }} 页</span>{% if result.page * 20 < result.total %}<a href="/?source={{ source }}&page={{ result.page+1 }}&thread={{ thread|urlencode }}&product_id={{ product_id|urlencode }}&q={{ q|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}">下一页 →</a>{% endif %}</div></section>
+<section class="card"><h2>最近同步任务</h2>{% if runtime %}<p class="small muted">后台同步：{{ {'running':'运行中','external':'已有服务运行中','starting':'启动中','failed':'启动失败，稍后自动重试'}.get(runtime.worker, runtime.worker) }}</p>{% endif %}{% if jobs %}<div class="table-scroll" role="region" aria-label="可横向滚动的记录表格" tabindex="0"><table><thead><tr><th>任务</th><th>状态</th><th>变更数</th><th>说明</th></tr></thead><tbody>{% for job in jobs %}<tr><td>#{{ job.id }} · {{ job.product }}</td><td>{{ {'completed':'已完成','done':'已完成','succeeded':'已完成','failed':'失败','running':'同步中','queued':'排队中','cancelled':'已取消'}.get(job.state,job.state) }}</td><td>{{ job.imported }}</td><td class="small">{{ job.error or '—' }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="muted">还没有同步任务。后台仅处理已启用产品的同步队列。</div>{% endif %}</section>
+<style>.archive-filters{flex-wrap:wrap;align-items:center;gap:10px}.archive-filters input,.archive-filters select{max-width:100%;min-width:0}.archive-filters label{display:flex;align-items:center;gap:5px}.archive-filters .small{width:100%}</style>
+<script>
+document.querySelectorAll('time[datetime]').forEach(t=>{const d=new Date(t.dateTime);if(!Number.isNaN(d.getTime())){t.textContent=d.toLocaleString();t.title=t.dateTime;}});
+try{const saved=JSON.parse(sessionStorage.getItem('archive-sync-position'));if(saved?.url===location.href){requestAnimationFrame(()=>scrollTo(0,saved.y));document.getElementById('notice').textContent=saved.message;sessionStorage.removeItem('archive-sync-position');}}catch{}
+async function syncNow(){
+ const b=document.getElementById('sync'),n=document.getElementById('notice');b.disabled=true;
+ try{
+  const responses=await Promise.all({{ sync_products|tojson }}.map(id=>fetch('/api/v1/apps/'+id+'/sync',{method:'POST',headers:{'X-AOS-Token':{{ token|tojson }}}})));
+  const accepted=await Promise.all(responses.filter(r=>r.ok).map(r=>r.json()));
+  if(!accepted.length)throw Error('同步请求失败，请重试');
+  n.textContent='正在同步，完成后自动更新当前筛选结果…';
+  for(let attempt=0;attempt<60;attempt++){
+   const jobs=await Promise.all(accepted.map(async x=>{const r=await fetch('/api/v1/jobs/'+x.job_id);if(!r.ok)throw Error('同步状态暂不可读，请稍后重试');return r.json();}));
+   if(jobs.every(j=>!['queued','running'].includes(j.state))){
+    const failed=responses.some(r=>!r.ok)||jobs.some(j=>['failed','cancelled'].includes(j.state));
+    const message=failed?'部分同步未完成，请查看最近同步任务':'同步完成，档案已更新';
+    try{sessionStorage.setItem('archive-sync-position',JSON.stringify({url:location.href,y:scrollY,message}));}catch{}
+    location.reload();return;
+   }
+   await new Promise(resolve=>setTimeout(resolve,1000));
+  }
+  n.textContent='同步仍在后台进行，可稍后点击同步检查；不会重复创建在途任务';
+ }catch(e){n.textContent=e.message||'连接失败，请重试';}finally{b.disabled=false;}
+}
+</script>
+<script>
+async function toggleProduct(id, button) {
+  button.disabled = true;
+  const notice = document.getElementById('notice');
+  try {
+    const base = '/api/v1/apps/' + id;
+    const state = await (await fetch(base + '/runtime')).json();
+    const action = ['ready','starting'].includes(state.state) ? 'pause' : 'start';
+    const response = await fetch(base + '/' + action, {method:'POST', headers:{'X-AOS-Token':{{ token|tojson }}}});
+    if (!response.ok) {notice.textContent = '操作未完成，请刷新后重试'; return;}
+    location.reload();
+  } catch (_) {notice.textContent = '连接失败，请重试';}
+  finally {button.disabled = false;}
+}
+{% if cards|selectattr('manual')|selectattr('runtime.state', 'in', ['starting','stopping'])|list %}
+setTimeout(() => location.reload(), 1000);
+{% endif %}
+</script>
+{% endblock %}

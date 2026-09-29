@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>打开 {{ product.name }}</h1>
+<section class="card" aria-live="polite">
+<p id="status">{{ "读取接入状态…" if manual_activation else "正在检查产品服务，首次启动可能需要稍候。" }}</p>
+<p id="help" class="muted"></p>
+<button id="retry" hidden onclick="startProduct()">重新检查并启动</button>
+<a href="/">返回控制台</a>
+</section>
+<script>
+const endpoint = {{ ('/api/v1/apps/' + product.id)|tojson }};
+const productName = {{ product.name|tojson }};
+const errors = {startup_busy: '其他控制台仍在启动此产品，请稍后重试。', ...{{ startup_errors|default({})|tojson }}};
+function failure(code) {
+  document.getElementById('status').textContent = '产品尚未就绪';
+  const suffix = code.split('_').pop();
+  const hint = {conflict:'端口被其他服务占用，请核对已有服务。',
+    missing:'产品目录或虚拟环境缺失，请检查安装路径。',
+    exited:'服务启动后退出，请检查本机服务日志和产品配置。',
+    timeout:'服务未在规定时间内就绪，请检查本机服务日志。'};
+  document.getElementById('help').textContent = errors[code] || hint[suffix] || '启动未完成，请检查服务配置后重试。';
+  document.getElementById('retry').hidden = false;
+}
+async function startProduct() {
+  document.getElementById('retry').hidden = true;
+  document.getElementById('status').textContent = '正在检查并启动产品服务…';
+  document.getElementById('help').textContent = '';
+  try {
+    const response = await fetch(endpoint + '/start', {method:'POST',
+      headers:{'X-AOS-Token':{{ token|tojson }}}});
+    if (!response.ok) { failure('startup_failed'); return; }
+    await poll();
+  } catch (_) { failure('connection_failed'); }
+}
+async function poll() {
+  const response = await fetch(endpoint + '/runtime');
+  if (!response.ok) { failure('startup_failed'); return; }
+  const result = await response.json();
+  if (result.state === 'ready') {
+    document.getElementById('status').textContent = '正在进入产品…';
+    const destination = new URL({{ product.ui_url|tojson }});
+    destination.searchParams.set('aos_theme', document.documentElement.dataset.appearance || 'system');
+    location.replace(destination.href);
+    return;
+  }
+  if (result.state === 'disabled') {
+    document.getElementById('status').textContent = productName + ' 未启用';
+    document.getElementById('help').textContent = '点击启动后才检查服务并同步。旧档案仍可在控制台查看。';
+    document.getElementById('retry').textContent = '启动 ' + productName;
+    document.getElementById('retry').hidden = false;
+    return;
+  }
+  if (result.state === 'stopping') {
+    document.getElementById('status').textContent = '正在暂停接入…';
+  }
+  if (result.state === 'failed' || result.state === 'idle') {
+    failure(result.error || 'startup_interrupted'); return;
+  }
+  setTimeout(() => poll().catch(() => failure('connection_failed')), 500);
+}
+{% if manual_activation %}
+poll().catch(() => failure("connection_failed"));
+{% else %}
+startProduct();
+{% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,13 @@
+{
+  "node": {
+    "version": "v22.23.3",
+    "sha256": "df450af89261115ef9f9e3830c3eeb2cc9213b63c720b1af623cb5dcbe2e02de",
+    "url": "https://nodejs.org/dist/v22.23.3/node-v22.23.3-linux-x64.tar.xz"
+  },
+  "python": "3.12",
+  "webview2": {
+    "version": "1.0.3537.50",
+    "sha256": "5ea526bbd728adda0da4d31219267e96460494a427e4894c4e09d9f320f4b9aa",
+    "url": "https://api.nuget.org/v3-flatcontainer/microsoft.web.webview2/1.0.3537.50/microsoft.web.webview2.1.0.3537.50.nupkg"
+  }
+}

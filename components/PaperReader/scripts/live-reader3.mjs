@@ -1,0 +1,4 @@
+import {chromium,expect} from '@playwright/test';
+const browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1500,height:1000}});
+let attempts=0;await page.route('**/api/questions',r=>{if(r.request().method()==='POST'){attempts++;return r.abort();}return r.continue();});
+try{await page.goto('http://127.0.0.1:8602');await page.locator('.text-line').first().waitFor();await expect(page.locator('#model-select')).toHaveValue('deepseek-flash');await expect(page.locator('#quick-note')).toBeVisible();await expect(page.locator('#model-status')).toContainText('18 / 20');await expect(page.locator('#consent')).toHaveCount(0);await page.screenshot({path:'var/verification/reader3-browser/live.png'});if(attempts)throw new Error('unexpected generation');console.log('Live reader verified: model selector, notes entry, 18 remaining, no consent dialog; zero generation attempts.');}finally{await browser.close();}

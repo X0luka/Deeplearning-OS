@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="paper-token" content="{{ csrf }}"><title>PaperReader · 论文阅读</title>
+<meta name="aos-appearance"><script src="/static/appearance.js?v=reading-pipeline-20260924"></script><link rel="stylesheet" href="/static/appearance.css?v=reading-pipeline-20260924"><link rel="stylesheet" href="/static/vendor/katex.min.css"><link rel="stylesheet" href="/static/reader.css?v=library-20260927"><script type="module" src="/static/reader.js?v=pdf-resilience-20260928-v2"></script><link rel="stylesheet" href="/static/workspace.css?v=reading-pipeline-20260924"><link rel="stylesheet" href="/static/library.css?v=actions-20260927"></head>
+<body>
+<header class="topbar"><a class="brand" href="/"><strong>PaperReader</strong><span>论文阅读</span></a>
+<span class="aos-theme-note">外观随 AgentOS</span><span class="preview">体验版 · 回答质量尚未验收</span><a href="{{ assistant_host }}" target="_blank" rel="noopener">AgentOS ↗</a></header>
+<div id="notice" role="status" hidden></div>
+<nav class="workspace-tools" aria-label="阅读布局">
+<button id="library-toggle" aria-controls="library" aria-expanded="true">文件库</button>
+<button data-workspace-view="reader">原文</button><button data-workspace-view="split" data-view="split">并排</button><button data-workspace-view="assistant">助手</button><button id="view-notes">笔记</button><button id="reset-layout" title="也可双击分隔条恢复宽度">重置布局</button><button id="return-answer" hidden>返回引用处</button>
+<details id="reading-options" class="reading-options"><summary>阅读设置</summary><label>字号 <select data-font-size><option value="14">标准</option><option value="16">较大</option><option value="18">大字</option></select></label><label>行距 <select data-line-height><option value="1.6">紧凑</option><option value="1.85">标准</option><option value="2.1">宽松</option></select></label><a id="full-translation" hidden target="_blank" rel="noopener">译读记录 ↗</a></details>
+</nav><button id="library-scrim" class="library-scrim" aria-label="关闭文件库" hidden></button><main>
+<aside class="library" id="library" aria-label="文件库"><button id="library-close" class="library-close" aria-label="关闭文件库">关闭 ×</button><div class="section-label">我的阅读</div><form id="url-import"><label class="sr-only" for="paper-url">论文 URL</label><input id="paper-url" type="url" required placeholder="粘贴论文链接" aria-label="论文 URL"><button type="submit">打开</button></form><p id="import-progress" role="status" hidden></p><div id="import-actions" hidden><button id="import-stop">停止</button><button id="import-resume" hidden>继续处理</button></div><label class="upload">＋ 打开 PDF<input id="upload" type="file" accept="application/pdf,.pdf"></label>
+<p class="hint">支持论文链接或 PDF · 最大 30 MB</p><div id="sessions"></div>
+<div class="library-footer">先读原文，再看解释。<br>点击回答中的引用可返回对应位置。</div></aside>
+<section class="reader"><div class="document-heading"><div><span class="section-label">原文</span><h1 id="document-title">开始一段专注的阅读</h1></div><a id="original" hidden target="_blank" rel="noopener">打开原件 ↗</a></div>
+<nav id="reading-modes" aria-label="阅读模式"><button data-reading-mode="pdf" aria-pressed="true">原文 PDF</button><button data-reading-mode="zh" aria-pressed="false">中文通读</button><button data-reading-mode="bilingual" aria-pressed="false">中英对照</button></nav>
+<details id="reading-work" aria-label="中文通读任务" hidden>
+<summary><strong>生成与下载</strong><span id="reading-work-summary" role="status">正在读取状态…</span></summary>
+<div class="reading-work-content">
+<div class="reading-work-row"><div><strong id="reading-work-title">中文通读</strong><p id="reading-work-status" role="status">开始后生成完整中文稿，进度自动保存。</p></div><div class="reading-work-actions"><button id="reading-start" class="primary">开始中文通读</button><button id="reading-stop" hidden>暂停</button><button id="reading-refresh" hidden>刷新状态</button><a id="reading-preview" target="_blank" rel="noopener" hidden>查看中文处理稿 ↗</a></div></div>
+<progress id="reading-progress" aria-label="中文通读完成进度" hidden></progress>
+<div id="reading-files" hidden><span>产出文件</span><a id="reading-download-html" download>下载 HTML（含图片）</a><a id="reading-download-markdown" download>下载 Markdown（含图片 ZIP）</a><small id="reading-file-note"></small></div>
+</div></details>
+<div class="reader-toolbar"><button id="prev" aria-label="上一页">←</button><label>第 <input id="page-number" type="number" min="1" value="1" aria-label="页码"> / <span id="page-total">—</span> 页</label><button id="next" aria-label="下一页">→</button><button id="quick-note">＋ 记笔记</button><button id="fit-width">适应宽度</button><button id="fit-page">整页</button><span class="separator"></span><label>缩放 <select id="zoom"><option value="0.65">65%</option><option value="0.8">80%</option><option value="1" selected>100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option></select></label></div>
+<div id="parse-warning" class="parse-warning" hidden></div>
+<div id="pdf-scroll"><div id="empty"><div class="paper-icon">▤</div><h2>把论文放在这里</h2><p>打开 PDF 后，拖选原文即可解释、翻译或保存笔记。<br>会话、笔记和阅读位置会自动保留。</p><p class="hint">打开 PDF 后点击“开始中文通读”；已完成内容自动保存。</p></div><div id="pdf-page" hidden><canvas id="pdf-canvas"></canvas><div id="highlights"></div><div id="text-layer"></div></div></div>
+<div id="html-reading" hidden><p id="html-reading-message" role="status"></p><iframe id="html-reading-frame" title="论文中文通读" sandbox="allow-same-origin" hidden></iframe><div id="html-reading-selection" hidden><button id="html-reading-ask">解释选段</button><button id="html-reading-note">记笔记</button></div></div>
+<div id="selection-bar" hidden><span id="selection-label"></span><button id="explain">解释</button><button id="translate">翻译</button><button id="formula">问公式</button><button id="selection-note">记笔记</button><button id="clear-selection" aria-label="取消选段">×</button></div>
+</section>
+<div id="workspace-splitter" class="splitter" aria-label="调整助手宽度，方向键调节，Enter重置" title="拖动调整宽度 · 双击重置"></div><aside class="assistant" id="assistant"><nav class="tabs"><button id="chat-tab" class="active">阅读助手</button><button id="notes-tab">我的笔记 <span id="notes-count">0</span></button></nav>
+<section id="chat-panel"><div id="model-status" class="model-status">选择一篇论文开始</div>
+<p id="gemini-feature-note" class="hint">未配置可用的 Gemini 原生 API 时，无法使用原生联网搜索或向模型发送原始 PDF（还需模型支持）。可改用“提取文本”配合 DeepSeek 等兼容模型问答、翻译；本地查看 PDF 和记笔记不受影响。</p>
+{% if managed and not unified %}<div id="platform-model-settings" data-tasks="chat" data-pdf="true"></div><script src="/static/llm-settings.js?v=reading-pipeline-20260924" defer></script>{% endif %}
+<div class="model-controls" {% if managed %}hidden{% endif %}><label>模型 <select id="model-select"></select></label><details id="model-settings"><summary>设置与用量</summary>
+<label>单次输出上限 <input id="output-limit" type="number" min="512" max="12000" step="256"></label>
+<label>思考 <select id="thinking"><option value="off">关闭</option><option value="auto">模型默认</option></select></label>
+<label>文档输入 <select id="input-mode" aria-describedby="gemini-feature-note"><option value="text">提取文本</option><option value="pdf">原始 PDF＋文本</option></select></label>
+<label><input id="web-search" aria-describedby="gemini-feature-note" type="checkbox"> 联网搜索（可能额外计费）</label>
+<p id="capability-hint" class="hint"></p><p class="hint">每篇论文最多20次模型请求、输入累计300万字节、输出预留累计60000 token；一轮最多3次请求。切换模型不会重置用量。PDF输入受剩余预算限制。</p>
+<button id="save-settings">保存设置</button><span id="settings-status" role="status"></span></details></div>
+<div id="messages" tabindex="0" aria-label="回答记录"><div class="chat-intro"><h2>从理解一个问题开始</h2><p>可以问研究目标、方法、实验或局限；也可以先在左侧选一段原文。</p><div class="suggestions"><button data-prompt="这篇论文研究什么问题？方法和实验分别提供了哪些依据？">研究问题与主要方法</button><button data-prompt="总结实验结果及论文明确指出的局限，区分原文事实和补充解释。">实验结果与局限</button></div></div></div>
+<button id="latest" hidden>有新内容 · 回到最新 ↓</button><form id="question-form"><div id="question-selection" hidden></div><label class="scope-label">讨论范围 <select id="discussion-scope"><option value="paper">整篇论文</option><option value="selection">当前选段</option></select></label><label class="sr-only" for="question">向论文提问</label><textarea id="question" rows="3" maxlength="4000" placeholder="向这篇论文提问，或继续追问…"></textarea><div class="composer-hint"><button id="expand-question" type="button" aria-expanded="false">展开编辑</button></div><div class="composer-hint"><span id="draft-status" role="status"></span><button id="clear-draft" type="button">清除问题草稿</button></div><div class="composer-footer"><span id="followup">单篇问答 · 中文回答</span><button id="cancel-question" type="button" hidden>停止</button><button id="send" type="submit" class="primary">发送 ↑</button></div></form></section>
+<section id="notes-panel" hidden>
+<div class="notes-tools"><button id="new-note">写论文笔记</button><details id="note-draft-tools" hidden><summary>恢复草稿 <span id="note-draft-count"></span></summary><select id="note-drafts" aria-label="恢复笔记草稿"></select><button id="discard-note-draft">放弃当前草稿</button></details></div>
+<section id="note-source" hidden><h3>选中的原文</h3><blockquote id="note-context"></blockquote></section>
+<details id="note-explanation-wrap" hidden><summary>已保存的解释</summary><div id="note-explanation"></div></details>
+<label for="note-body">我的笔记</label><textarea id="note-body" rows="7" maxlength="12000" placeholder="写下你对这段原文的理解…"></textarea>
+<div class="note-actions"><button id="save-note" class="primary">保存笔记</button><button id="note-add-same" hidden>为此选段添加笔记</button></div><p id="note-status" role="status"></p>
+<div id="notes-list"></div></section>
+</aside>
+</main>{% if unified %}<script src="{{ assistant_host }}/static/assistant-bridge.js" data-host="{{ assistant_host }}" data-provider="paper" data-container="#chat-panel"></script>{% endif %}</body></html>

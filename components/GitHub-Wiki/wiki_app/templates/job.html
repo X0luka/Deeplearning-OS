@@ -1,0 +1,50 @@
+{% extends "base.html" %}{% block content %}
+<a href="/">← 仓库</a><section class="card"><span class="eyebrow">READING TASK</span>
+<h1>{{ '生成 Wiki' if job.kind in ['build','architecture','knowledge','page_diagrams'] else '删除仓库数据（保留问答）' if job.kind=='delete_repo' else '查阅源码' }}</h1>
+<p id="state" role="status">读取进度…</p><p class="muted">各阶段自动推进，无需逐个进入。可以离开页面，稍后继续查看；未完成项保留记录，已有成果仍可阅读。</p>
+<div id="notice"></div><div id="stages"></div>
+<div class="row"><button id="cancel" class="secondary" onclick="cancelJob()">停止本次生成</button><button id="retry" hidden onclick="retryJob()">继续未完成部分</button><a id="result" class="button" hidden>阅读 Wiki →</a></div></section>
+{% endblock %}{% block scripts %}<script>
+const id={{ job.id|tojson }};
+const generating={{ (job.kind in ['build','architecture','knowledge','page_diagrams'])|tojson }};
+const stageNames={build:'采集源码与建立快照',architecture:'静态结构分析',knowledge:'研究架构与生成正文',page_diagrams:'生成配图与源码审核',delete_repo:'删除仓库数据',chat:'仓库讨论'};
+const stateNames={queued:'排队中',running:'进行中',succeeded:'已完成',partial:'部分完成',failed:'失败',interrupted:'已中断',cancelled:'已停止'};
+let timer;
+function explainFailure(f){return [f.message,'规则：'+f.rule_id+'（v'+f.rule_version+'）','影响：'+(f.scope==='local'?'仅当前对象':'当前阶段')+(f.stage?' · '+f.stage:''),f.resource?'对象：'+f.resource:'','恢复：'+f.action].filter(Boolean).join('\n')}
+function element(tag,text){const n=document.createElement(tag);n.textContent=text;return n}
+async function poll(){
+ clearTimeout(timer);
+ try{
+  const r=await fetch('/api/jobs/'+id+'/pipeline');if(!r.ok)throw Error('无法读取生成进度，请稍后重试');
+  const p=await r.json();const active=!!p.active_id;
+  document.getElementById('state').textContent=active?(generating?'正在生成 Wiki · ':'正在处理 · ')+(stageNames[p.stages.find(s=>s.id===p.active_id).kind]||'处理任务'):stateNames[p.state]||p.state;
+  document.getElementById('notice').textContent=p.state==='partial'?'生成流程已结束；已有成果可阅读，未完成项见各阶段记录。':active?'后续阶段会自动开始，无需点击。':'';
+  const box=document.getElementById('stages');
+  const opened=new Set([...box.querySelectorAll('details[open]')].map(n=>n.dataset.stage));
+  box.replaceChildren();
+  for(const s of p.stages){
+   const partial=s.result?.partial;
+   const section=element('section','');section.style.marginBottom='18px';
+   section.append(element('h3',(stageNames[s.kind]||s.kind)+' · '+(partial?'部分完成':stateNames[s.state]||s.state)));
+   const failures=s.result?.failures||[];
+   if(s.failure||partial||s.error){
+    const d=element('details','');d.dataset.stage=s.id;d.open=opened.has(s.id);
+    d.append(element('summary','查看未完成记录与恢复建议'));
+    const pre=element('pre',s.failure?explainFailure(s.failure):failures.map(x=>(x.topic?.title||'当前阶段')+'\n'+explainFailure(x.failure)).join('\n\n')||s.error||'部分源码或主题未完成，已有成果保留；详见版本覆盖范围。');
+    pre.style.whiteSpace='pre-wrap';d.append(pre);section.append(d);
+   }
+   box.append(section);
+  }
+  document.getElementById('cancel').hidden=!active;
+  document.getElementById('retry').hidden=!p.retryable;
+  const a=document.getElementById('result');const last=p.stages[p.stages.length-1];
+  a.hidden=!p.version_id&&!last.result?.deleted_repo&&!last.result?.interaction_id;
+  a.href=p.version_id?'/versions/'+p.version_id:last.result?.deleted_repo?'/':'/history/'+last.result?.interaction_id;
+  a.textContent=p.version_id?'阅读 Wiki →':last.result?.deleted_repo?'返回我的仓库':'查看结果 →';
+  if(active)timer=setTimeout(poll,1000);
+ }catch(e){showError(e);timer=setTimeout(poll,3000)}
+}
+async function cancelJob(){try{await api('/api/jobs/'+id+'/pipeline/cancel');await poll()}catch(e){showError(e)}}
+async function retryJob(){const b=document.getElementById('retry');b.disabled=true;try{const j=await api('/api/jobs/'+id+'/pipeline/retry');location.href='/jobs/'+j.job_id}catch(e){showError(e)}finally{b.disabled=false}}
+poll();
+</script>{% endblock %}

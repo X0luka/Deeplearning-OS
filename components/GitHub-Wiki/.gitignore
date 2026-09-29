@@ -1,0 +1,10 @@
+var/
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.env
+**/human/
+*.egg-info/
+
+frontend/node_modules/

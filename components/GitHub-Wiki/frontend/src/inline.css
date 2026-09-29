@@ -1,0 +1,11 @@
+.inline-diagram{margin:20px 0 28px;padding:16px;border:1px solid var(--aos-line,#ddd);border-radius:12px;overflow:hidden}
+.inline-graph-canvas{width:100%;min-width:0;border:1px solid var(--aos-line,#ddd);border-radius:8px;position:relative}
+.inline-diagram h3{margin:0 0 8px}.inline-caption{font-size:14px;line-height:1.6}.inline-diagram details{margin-top:12px}
+.inline-diagram .react-flow__node{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}.inline-edge-label{position:absolute;background:var(--aos-subtle,#fff);color:var(--aos-text,#222);font-size:12px;line-height:18px;padding:2px 4px;border:0;border-radius:3px;max-width:320px;white-space:normal;pointer-events:all;cursor:pointer}
+.inline-node-group{display:block;color:var(--aos-muted,#666);font-size:11px;margin-bottom:3px}.inline-proof-panel{margin-top:12px;padding:12px;background:var(--aos-subtle,#f4f4f4);border-radius:8px;overflow-wrap:anywhere}.inline-proof-panel a{font-size:13px}.inline-text-item{border:0;padding:2px;background:transparent;color:inherit;text-align:left;text-decoration:underline;cursor:pointer}.diagram-note{margin:12px 0;color:var(--aos-muted,#666)}
+@media(max-width:600px){.inline-diagram{padding:8px}.inline-proof-panel{padding:8px}}
+
+.inline-diagram .react-flow__controls-button{background:var(--aos-subtle,#fff);color:var(--aos-text,#222);border-bottom:1px solid var(--aos-line,#ddd)}
+.inline-diagram .react-flow__controls-button svg{fill:currentColor}
+.inline-diagram .react-flow__attribution{background:var(--aos-subtle,#fff);color:var(--aos-muted,#555)}
+.inline-diagram .react-flow__attribution a{color:inherit}

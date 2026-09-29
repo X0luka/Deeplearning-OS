@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% block content %}
+<a href="/data" data-center-back>← 返回数据与知识中心</a>
+<div class="top" style="margin-top:20px"><div><h1>问答记录</h1><p class="small muted">{{ source_product.name if source_product else item.product }} · 修订 {{ item.revision }} · <time datetime="{{ item.updated_at }}">{{ item.updated_at }}</time></p></div><a class="button" href="/api/v1/data/records/{{ item.archive_id }}/export">导出记录</a></div>
+{% if item.rollback_detected %}<p class="notice">源数据曾回退，此处保留较新的档案。</p>{% endif %}
+<section class="card"><h2>提问</h2><div class="copy">{{ item.query or '未保存问题正文' }}</div></section>
+<section class="card"><h2>回答</h2><div class="copy">{{ item.answer or '未保存回答正文' }}</div><p class="small muted">原记录状态：{{ {'completed':'已完成','succeeded':'已完成','success':'已完成','failed':'失败','error':'失败','running':'进行中','queued':'排队中','cancelled':'已取消','interrupted':'已中断'}.get(item.status,'未识别') }}。保存回答不代表内容已经核实。</p></section>
+<details class="card"><summary>来源与引用</summary><p class="small muted">{{ '产品会话' if item.source_channel=='product_ui' else '旧记录 · 来源未知' }} · {{ item.conversation_id or '未保存会话标识' }}</p>
+{% for c in item.citations %}<div style="margin:16px 0"><b>{{ c.source or c.label or '引用' }}</b>{% if c.page %} · 页 {{ c.page }}{% endif %}{% if c.start %} · 行 {{ c.start }}{% if c.end %}–{{ c.end }}{% endif %}{% endif %}{% if c.commit %} · {{ c.commit }}{% endif %}{% if c.url|safe_source_url %} <a href="{{ c.url|safe_source_url }}" target="_blank" rel="noopener noreferrer">打开来源 ↗</a>{% endif %}<div class="copy muted">{{ c.text_preview or '' }}</div></div>{% else %}<p class="muted">该记录没有保存引用信息，不代表回答错误或已经核实。</p>{% endfor %}
+{% if source_product %}<a data-product-link class="button" href="/products/{{ source_product.id }}/open" target="_blank" rel="noopener">打开 {{ source_product.name }} ↗</a><p class="small muted">打开应用入口；本批尚未接入材料位置回跳。</p>{% else %}<p class="muted">来源应用当前未加载，已保存的问答仍可阅读和导出。</p>{% endif %}
+</details><p class="small muted">导出包含此条已保存问答及引用元数据，不包含原始材料文件。</p>
+<script src="/static/data-center.js"></script>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% block content %}
+<a href="/data">← 数据与知识中心</a><h1>{{ '阅读笔记' if item.kind=='note' else '原始问答' }}</h1>
+<p class="small muted">{{ item.key }} · {{ item.product }} · {{ item.status }} · {{ item.updated }}</p>
+<section class="card"><h2>原问题</h2><div class="copy">{{ item.query }}</div></section>
+<section class="card"><h2>{{ '笔记正文' if item.kind=='note' else '历史回答 · 未经本轮事实核验' }}</h2><div class="copy">{{ item.answer or '尚无回答正文' }}</div></section>
+{% if item.selection %}<details class="card"><summary>保存的选段</summary><div class="copy">{{ item.selection | tojson(indent=2) }}</div></details>{% endif %}
+{% if item.explanation %}<details class="card"><summary>保存的附带来源</summary><div class="copy">{{ item.explanation }}</div></details>{% endif %}
+{% if item.architecture_context %}<details class="card"><summary>保存的代码节点上下文</summary><div class="copy">{{ item.architecture_context | tojson(indent=2) }}</div></details>{% endif %}
+<details class="card"><summary>已存引用</summary><div class="copy">{{ item.citations | tojson(indent=2) }}</div></details>
+{% endblock %}

@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% block content %}<div id="architecture-reader"></div><noscript>架构阅读需要启用 JavaScript。<a href="/versions/{{ version.id }}">返回 Wiki</a></noscript>{% endblock %}
+{% block scripts %}
+<script>window.architectureConfig={{ {"version":version.id,"repo":repo.id,"name":repo.url.removeprefix("https://github.com/")}|tojson }};</script>
+<link rel="stylesheet" href="/static/reader/app.css?v=2">
+<script type="module" src="/static/reader/app.js?v=2"></script>
+{% endblock %}

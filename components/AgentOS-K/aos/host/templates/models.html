@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="top"><div><div class="eyebrow">SETTINGS</div><h1>API 与模型</h1><p class="muted">添加一个 API 连接，Reader、Wiki 与统一助手共同使用。保存和获取模型不会发起生成。</p></div></div>
+<p id="model-notice" role="status" aria-live="polite"></p>
+<p id="gemini-feature-note" class="muted"><strong>Gemini 为可选连接。</strong>当前版本的原生联网搜索、向模型发送原始 PDF（Reader）需要可用的 Gemini 原生 API，且所选模型须支持对应能力。未配置时，请关闭“原生联网”，文档输入选择“提取文本”；已配置 DeepSeek 等兼容模型的文字问答、文本阅读与翻译仍可使用，本地 PDF 浏览和笔记不受影响。</p>
+<section class="card"><h2>网络设置</h2>
+<p class="muted">分别设置模型 API、论文下载和 GitHub 获取的网络路径。这里只影响本实例，不修改系统代理或网关；保存不会发起联网测试。</p>
+<form id="network-form" class="llm-form"><fieldset id="network-fields" disabled style="border:0;padding:0"><div id="network-channels" class="llm-form"></div><button type="submit">保存网络设置</button></fieldset></form>
+<p id="network-status" role="status" aria-live="polite">正在读取网络设置…</p>
+<p class="muted">模型连接中已填写的代理优先于这里的“模型 API”。“不使用应用代理”仍可能经过系统的 TUN 或网关；本机服务通信始终不使用外部代理。新网络配置用于后续请求，已发出的请求不会自动重发。</p>
+</section>
+<section class="card"><h2>API 连接</h2><p id="connection-empty" hidden>请先输入 API。连接名称由您自定义，系统不会根据名称限定厂商或模型。</p><div id="connections"></div>
+<details id="connection-editor"><summary>添加 API / 编辑连接</summary>
+<form id="connection-form" class="llm-form">
+<input name="id" type="hidden"><label>连接名称<input name="name" required maxlength="100" placeholder="自己起一个名称"></label>
+<label>API Base URL<input name="base_url" type="url" placeholder="https://provider.example/v1" required></label>
+<label>API Key<input name="key" type="password" autocomplete="new-password" placeholder="新连接请输入 API Key；编辑时留空保留"></label>
+<details id="connection-advanced"><summary>高级连接设置</summary><label>接口格式<select name="protocol"><option value="chat">Chat Completions 兼容（默认）</option><option value="gemini">Gemini 原生</option></select></label><label>代理（可选）<input name="proxy" type="url" placeholder="http://127.0.0.1:7897"></label>
+<label><input name="enabled" type="checkbox" checked> 启用连接</label></details>
+<div class="row"><button>保存连接</button><button type="button" id="new-connection">清空表单</button></div></form></details></section>
+<section class="card"><h2>默认模型与回答设置</h2><p class="muted">全局 Custom 只设置一次。引用规则和 Wiki 的结构化输出要求由产品保留。</p>
+<form id="settings-form" class="llm-form">
+<label>设置范围<select id="scope"></select></label>
+<label>搜索模型<input id="model-search" type="search" placeholder="输入模型或连接名称"></label>
+<label>模型<select id="selection"></select></label><p id="model-limits" class="muted" aria-live="polite"></p>
+<p id="provider-api-note" class="muted" hidden></p>
+<label id="custom-label">Custom · 全局回答偏好<textarea id="custom" rows="4" maxlength="12000" placeholder="例如：使用中文，先解释概念，公式使用 LaTeX。"></textarea></label>
+<div class="llm-grid"><label>最大输出 tokens<input id="output" type="number" min="1" placeholder="继承"></label>
+<label>思考模式<select id="thinking"><option value="">继承</option><option value="default">模型默认</option><option value="off">关闭</option><option value="auto">开启</option></select></label></div>
+<label>工具调用<select id="tools"><option value="">继承上级</option><option value="false">关闭</option><option value="true">开启</option></select></label>
+<p class="muted">工具调用用于按需发现和读取有权访问的论文、仓库及笔记；关闭后仅使用已提供的上下文。思考控制模型推理模式，不改变资料权限。</p>
+<p id="effective-controls" role="status" aria-live="polite"></p>
+<details><summary>其他高级设置</summary>
+<label>温度<input id="temperature" type="number" min="0" max="2" step="0.1" placeholder="模型默认 / 继承"></label>
+<label>原生联网<select id="web_search" aria-describedby="gemini-feature-note"><option value="">继承</option><option value="false">关闭</option><option value="true">开启（要求已接入的原生搜索）</option></select></label>
+<label>文档输入<select id="document_input" aria-describedby="gemini-feature-note"><option value="">继承</option><option value="text">提取文本</option><option value="pdf">原始 PDF（Reader）</option></select></label>
+</details><div class="row"><button>保存设置</button><button type="button" id="inherit">恢复继承</button></div><p id="scope-status" class="muted"></p></form></section>
+<section class="card"><h2>模型目录</h2><p class="muted">目录可见不代表调用已验证。未知能力不会自动发起付费测试；可按服务商文档确认能力。</p><div id="catalog"></div>
+<details><summary>手动添加模型 / 确认能力</summary><form id="manual-form" class="llm-form"><label>连接<select id="manual-connection"></select></label><label>准确模型 ID<input id="manual-id" required maxlength="250"></label>
+<div id="capabilities" class="llm-grid"></div><button>保存模型信息</button></form></details></section>
+<style>.llm-form{display:grid;gap:16px;margin-top:18px;max-width:820px}.llm-form label{display:grid;gap:6px}.llm-form label:has(input[type=checkbox]){display:flex}.llm-form input:not([type=checkbox]),.llm-form select,.llm-form textarea{width:100%}.llm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.llm-item{border-bottom:1px solid var(--line);padding:14px 0;overflow-wrap:anywhere}.llm-item .row{margin-top:8px}#model-notice{position:sticky;top:8px;z-index:5;background:var(--surface);border-radius:8px;padding:10px}#catalog{max-height:340px;overflow:auto}@media(max-width:650px){.llm-grid{grid-template-columns:1fr}}</style>
+<script src="/static/network-settings.js?v=20260929"></script>
+<script src="/static/models.js?v=provider-notes-20260929"></script>
+{% endblock %}

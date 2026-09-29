@@ -1,0 +1,11 @@
+{
+  "asset_id": "PDF-001",
+  "title": "Attention Is All You Need",
+  "path": "var/test-assets/1706.03762v7.pdf",
+  "sha256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697",
+  "bytes": 2215244,
+  "pages": 15,
+  "git_policy": "PDF excluded; manifest tracked",
+  "authorized_provider": "DeepSeek",
+  "other_providers": "not enabled"
+}

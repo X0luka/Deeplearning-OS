@@ -1,0 +1,18 @@
+[Unit]
+Description=AgentOS-K local product workbench
+After=network.target
+
+[Service]
+Type=simple
+User=xix
+WorkingDirectory=/home/xix/code/AgentOS-K
+ExecStart=/home/xix/code/AgentOS-K/.venv/bin/python -m aos.local_runner
+Restart=on-failure
+RestartSec=5s
+KillMode=control-group
+TimeoutStopSec=30s
+UMask=0077
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

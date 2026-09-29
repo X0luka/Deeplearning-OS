@@ -1,0 +1,32 @@
+{% extends "base.html" %}{% block content %}
+<div class="top"><div><div class="eyebrow">AgentOS</div><h1>数据与知识中心</h1><p class="muted">查看平台已经保存的数据。</p></div><a class="button" href="{{ request.url }}">刷新</a></div>
+<p class="small muted">当前展示已归档问答，不代表全部论文、仓库文件或笔记。各应用仍从各自入口使用。</p>
+<section class="card">
+<form method="get" action="/data" class="row data-filters">
+<label class="search-label"><span class="small muted">搜索内容</span><input name="q" value="{{ q }}" maxlength="200" placeholder="搜索问题或回答" aria-label="搜索问题或回答"></label>
+<label><span class="small muted">来源应用</span><select name="product_id" aria-label="来源应用"><option value="">全部应用</option>{% for p in result.sources %}<option value="{{ p.product }}" {% if product_id==p.product %}selected{% endif %}>{{ p.name }}</option>{% endfor %}{% if product_id and product_id not in names %}<option value="{{ product_id }}" selected>{{ product_id }}（没有已归档记录）</option>{% endif %}</select></label>
+<label><span class="small muted">记录来源</span><select name="source" aria-label="记录来源"><option value="all" {% if source=='all' %}selected{% endif %}>全部个人记录</option><option value="product_ui" {% if source=='product_ui' %}selected{% endif %}>产品会话</option><option value="legacy_unknown" {% if source=='legacy_unknown' %}selected{% endif %}>旧记录 · 来源未知</option></select></label>
+{% if thread %}<input type="hidden" name="thread" value="{{ thread }}">{% endif %}
+<button type="submit">搜索</button>{% if q or product_id or source!='all' or thread %}<a href="/data">清除筛选</a>{% endif %}
+</form>
+<p class="small muted" id="result-count">符合当前筛选：{{ result.total }} 条{% if thread %} · 已限定会话{% endif %}</p>
+<div class="data-records">
+{% for item in result['items'] %}
+<article class="data-record">
+<div class="small muted row"><span>{{ names.get(item.product,item.product) }}</span><span>{{ '产品会话' if item.source_channel=='product_ui' else '旧记录 · 来源未知' }}</span><time datetime="{{ item.updated_at }}">{{ item.updated_at }}</time><span>{{ {'completed':'已完成','succeeded':'已完成','success':'已完成','failed':'失败','error':'失败','running':'进行中','queued':'排队中','cancelled':'已取消','interrupted':'已中断'}.get(item.status,'状态未识别') }}</span></div>
+<h2><a href="/data/{{ item.archive_id }}">{{ item.query or '未保存问题正文' }}</a></h2>
+<p class="answer-preview muted">{{ item.answer or '未保存回答正文' }}</p>
+{% if item.rollback_detected %}<p class="small notice">源数据曾回退，此处保留较新的档案。</p>{% endif %}
+</article>
+{% else %}<div class="empty">{% if q or product_id or source!='all' or thread %}没有符合筛选条件的记录。可以清除筛选查看已保存的数据。{% else %}还没有已归档问答。可继续使用应用，或到概览页查看同步状态。{% endif %}</div>{% endfor %}
+</div>
+{% if result.total %}<nav class="pager" aria-label="记录分页">{% if result.page>1 %}<a href="{{ previous_url }}">← 上一页</a>{% else %}<span></span>{% endif %}<span class="small muted">第 {{ result.page }} 页</span>{% if result.page*20<result.total %}<a href="{{ next_url }}">下一页 →</a>{% else %}<span></span>{% endif %}</nav>{% endif %}
+</section>
+<details class="card"><summary>同步状态</summary><p class="small muted">显示最近一次任务与接收时间，不代表原应用当前在线或全部数据已接入。</p>
+{% for p in result.sources %}<div class="sync-line"><b>{{ p.name }}</b><span>{{ {'succeeded':'最近任务已完成','done':'最近任务已完成','completed':'最近任务已完成','queued':'等待同步','running':'同步中','failed':'最近同步失败','cancelled':'最近同步已取消','interrupted':'最近同步已中断'}.get(p.sync_state,'尚无同步任务' if not p.sync_state else '同步状态未识别') }}</span>{% if p.observed_at %}<span class="small muted">最近接收 <time datetime="{{ p.observed_at }}">{{ p.observed_at }}</time></span>{% else %}<span class="small muted">尚无接收记录</span>{% endif %}{% if not p.registered %}<span class="small muted">应用未加载，档案仍可查看</span>{% endif %}</div>{% else %}<p class="muted">尚无接入记录。</p>{% endfor %}
+<a href="/">前往概览与会话管理同步 →</a></details>
+<style>
+.data-filters{align-items:flex-end}.data-filters label{display:grid;gap:5px}.search-label{flex:1;min-width:180px}.data-filters input,.data-filters select{width:100%}.data-record{padding:20px 0;border-top:1px solid var(--line);min-width:0}.data-record h2{font-size:17px;margin:8px 0;overflow-wrap:anywhere}.answer-preview{margin:8px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.sync-line{display:flex;flex-wrap:wrap;gap:8px 16px;padding:12px 0;border-top:1px solid var(--line)}summary{cursor:pointer}summary:focus-visible{outline:3px solid var(--focus)}@media(max-width:600px){.data-filters label{width:100%}.data-record .row{gap:4px 12px}}
+</style>
+<script src="/static/data-center.js"></script>
+{% endblock %}

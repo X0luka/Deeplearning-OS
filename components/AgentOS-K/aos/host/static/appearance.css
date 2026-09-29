@@ -1,0 +1,43 @@
+/* AgentOS appearance contract. Distributed to products by sync_ui_assets.py. */
+:root {
+  color-scheme:light;
+  --aos-bg:#ffffff; --aos-panel:#ffffff; --aos-sidebar:#f7f7f8;
+  --aos-subtle:#f2f2f3; --aos-hover:#e9e9eb; --aos-text:#202123;
+  --aos-muted:#65676b; --aos-line:#e2e2e5; --aos-control:#909297;
+  --aos-action:#262628; --aos-on-action:#ffffff; --aos-action-hover:#444448;
+  --aos-focus:#71717a; --aos-selected:#ebebee;
+  --aos-success:#286343; --aos-success-bg:#ecf5ef;
+  --aos-warning:#835b21; --aos-warning-bg:#faf2e5;
+  --aos-error:#a3323b; --aos-error-bg:#fbeef0;
+  --aos-graph:#777b84; --aos-code:#f6f6f7;
+  --aos-shadow:0 2px 8px rgb(0 0 0 / 3%);
+  --aos-font:"Segoe UI Variable Text","Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+}
+:root[data-theme="dark"] {
+  color-scheme:dark;
+  --aos-bg:#212121; --aos-panel:#262626; --aos-sidebar:#171717;
+  --aos-subtle:#2e2e2e; --aos-hover:#3a3a3a; --aos-text:#ededed;
+  --aos-muted:#b4b4ba; --aos-line:#3e3e42; --aos-control:#818187;
+  --aos-action:#ececee; --aos-on-action:#202123; --aos-action-hover:#ffffff;
+  --aos-focus:#bcbcc4; --aos-selected:#363638;
+  --aos-success:#a3d6b4; --aos-success-bg:#26382d;
+  --aos-warning:#e7c48c; --aos-warning-bg:#3b3225;
+  --aos-error:#f0a7b0; --aos-error-bg:#402b30;
+  --aos-graph:#a5a5af; --aos-code:#191919;
+  --aos-shadow:none;
+}
+html{font-family:var(--aos-font);background:var(--aos-bg);color:var(--aos-text)}
+body{font-family:var(--aos-font);background:var(--aos-bg);color:var(--aos-text);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:inherit}
+input,select,textarea{color:var(--aos-text);background:var(--aos-panel)}
+input::placeholder,textarea::placeholder{color:var(--aos-muted);opacity:1}
+:focus-visible{outline:2px solid var(--aos-focus);outline-offset:3px}
+::selection{background:var(--aos-selected);color:var(--aos-text)}
+a{color:inherit;text-underline-offset:3px}
+h1,h2,h3{letter-spacing:-.025em;font-weight:600}
+button,.button{transition:background-color .12s ease,border-color .12s ease}
+.aos-appearance{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--aos-muted)}
+.aos-appearance select{font-size:12px;padding:6px 9px;min-height:32px;width:auto;border:1px solid var(--aos-line);border-radius:8px;background:var(--aos-sidebar);color:var(--aos-text)}
+.aos-theme-note{font-size:11px;color:var(--aos-muted);white-space:nowrap}
+[data-theme-status]{font-size:11px;color:var(--aos-muted)}
+@media(prefers-reduced-motion:reduce){button,.button{transition:none!important}}

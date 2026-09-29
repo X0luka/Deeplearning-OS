@@ -1,0 +1,8 @@
+{
+  "name": "deeplearning-os-preparation",
+  "private": true,
+  "description": "Private tools for isolated browser regression tests",
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}

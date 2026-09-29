@@ -1,0 +1,158 @@
+[
+  {
+    "repo": "docling-project/docling-layout-heron",
+    "revision": "8f39ad3c0b4c58e9c2d2c84a38465abf757272d8",
+    "license": "apache-2.0",
+    "files": [
+      {
+        "name": ".gitattributes",
+        "bytes": 1519,
+        "lfs_sha256": null
+      },
+      {
+        "name": "README.md",
+        "bytes": 3219,
+        "lfs_sha256": null
+      },
+      {
+        "name": "config.json",
+        "bytes": 3268,
+        "lfs_sha256": null
+      },
+      {
+        "name": "docling_heron_400.png",
+        "bytes": 96925,
+        "lfs_sha256": null
+      },
+      {
+        "name": "model.safetensors",
+        "bytes": 171658996,
+        "lfs_sha256": "00333a43451945aaf89db8ca9c0a17e75d1537c17db60fdb91aa95f4c7929e0c"
+      },
+      {
+        "name": "preprocessor_config.json",
+        "bytes": 444,
+        "lfs_sha256": null
+      }
+    ]
+  },
+  {
+    "repo": "docling-project/docling-models",
+    "revision": "fc0f2d45e2218ea24bce5045f58a389aed16dc23",
+    "license": "cdla-permissive-2.0",
+    "files": [
+      {
+        "name": ".gitattributes",
+        "bytes": 1905,
+        "lfs_sha256": null
+      },
+      {
+        "name": ".gitignore",
+        "bytes": 5180,
+        "lfs_sha256": null
+      },
+      {
+        "name": "README.md",
+        "bytes": 3413,
+        "lfs_sha256": null
+      },
+      {
+        "name": "config.json",
+        "bytes": 41,
+        "lfs_sha256": null
+      },
+      {
+        "name": "model_artifacts/tableformer/accurate/tableformer_accurate.safetensors",
+        "bytes": 212758388,
+        "lfs_sha256": "2a7d6c924b3cd12fb99a09280ca9c33a89c5d60b93253617d2e088c1a40374d9"
+      },
+      {
+        "name": "model_artifacts/tableformer/accurate/tm_config.json",
+        "bytes": 7060,
+        "lfs_sha256": null
+      },
+      {
+        "name": "model_artifacts/tableformer/fast/tableformer_fast.safetensors",
+        "bytes": 145453276,
+        "lfs_sha256": "3119563aab5a7c96fda4d621119b63fd8806272b86c30936d15507616422f718"
+      },
+      {
+        "name": "model_artifacts/tableformer/fast/tm_config.json",
+        "bytes": 7060,
+        "lfs_sha256": null
+      }
+    ]
+  },
+  {
+    "repo": "docling-project/CodeFormulaV2",
+    "revision": "ecedbe111d15c2dc60bfd4a823cbe80127b58af4",
+    "license": "cdla-permissive-2.0",
+    "files": [
+      {
+        "name": ".gitattributes",
+        "bytes": 1519,
+        "lfs_sha256": null
+      },
+      {
+        "name": "README.md",
+        "bytes": 1511,
+        "lfs_sha256": null
+      },
+      {
+        "name": "added_tokens.json",
+        "bytes": 975,
+        "lfs_sha256": null
+      },
+      {
+        "name": "chat_template.json",
+        "bytes": 422,
+        "lfs_sha256": null
+      },
+      {
+        "name": "config.json",
+        "bytes": 2638,
+        "lfs_sha256": null
+      },
+      {
+        "name": "generation_config.json",
+        "bytes": 169,
+        "lfs_sha256": null
+      },
+      {
+        "name": "model.safetensors",
+        "bytes": 630993616,
+        "lfs_sha256": "4b04e77af34c4e682a7ab1617628340d658f3c3dcd12456dd2a7fff805cf79d2"
+      },
+      {
+        "name": "preprocessor_config.json",
+        "bytes": 486,
+        "lfs_sha256": null
+      },
+      {
+        "name": "processor_config.json",
+        "bytes": 68,
+        "lfs_sha256": null
+      },
+      {
+        "name": "special_tokens_map.json",
+        "bytes": 1071,
+        "lfs_sha256": null
+      },
+      {
+        "name": "tokenizer.json",
+        "bytes": 7160031,
+        "lfs_sha256": null
+      },
+      {
+        "name": "tokenizer_config.json",
+        "bytes": 24952,
+        "lfs_sha256": null
+      },
+      {
+        "name": "vocab.json",
+        "bytes": 1612747,
+        "lfs_sha256": null
+      }
+    ]
+  }
+]

@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {prepareMarkdown} from '../aos/host/static/assistant-markdown.mjs';
+const seen=[]; const math=(x,display)=>{seen.push([x,display]);return 'FORMULA';};
+const source='`NavigationLink to={path(\\`/conversations/${id}\\`)}` [[E51]] and $x^2$';
+const output=prepareMarkdown(source,math);
+assert.equal(output,'`` NavigationLink to={path(`/conversations/${id}`)} `` [[E51]] and FORMULA');
+assert.deepEqual(seen,[['x^2',false]]);
+assert.equal(prepareMarkdown('```js\nconst s = "$value$";\n```',math),'```js\nconst s = "$value$";\n```');
+assert.equal(prepareMarkdown('`$value$` and $$x+y$$',math),'`$value$` and FORMULA');
+assert.equal(prepareMarkdown('literal ${id}',math),'literal ${id}');
+console.log('Code, template strings, citations and math: passed');

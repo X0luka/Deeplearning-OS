@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% block content %}
+<link rel="stylesheet" href="/static/knowledge-center.css?v=2">
+<div id="knowledge-center" data-token="{{ token }}" data-query="{{ q }}">
+<div class="top"><div><div class="eyebrow">AgentOS · 数据与知识中心</div><h1>认知地图</h1><p class="muted">先把内容整理清楚，再从主题回到原文。</p></div><div class="row"><button id="kc-refresh" type="button">刷新列表</button><button id="kc-sync" type="button" class="kc-secondary">更新旧档案</button></div></div>
+<div class="kc-notice small">新聊天直接读取已保存记录；旧档案仅手动更新。不代表全部论文、仓库文件或笔记均已接入。</div>
+<div class="kc-shell"><nav id="kc-nav" aria-label="地图主题"></nav><section class="kc-body">
+<div class="kc-heading"><div><h2 id="kc-heading">全局概览</h2><p id="kc-summary" class="small muted">正在读取真实记录…</p></div><label><span class="sr-only">搜索问题或回答</span><input id="kc-search" placeholder="搜索问题或回答" maxlength="200" value="{{ q }}"></label></div>
+<details id="kc-coverage" class="kc-coverage"><summary>整理范围与计数说明</summary></details>
+<div class="kc-tools"><div class="row"><button class="kc-tab" data-view="map" aria-pressed="true">主题地图</button><button class="kc-tab" data-view="list" aria-pressed="false">原始记录</button><button class="kc-tab" data-view="notes" aria-pressed="false">已归档笔记</button></div><label class="small"><input id="kc-marked" type="checkbox" checked> 包含评测／回放标记</label></div>
+<div class="kc-work"><section id="kc-main" aria-label="地图与记录"></section><section id="kc-detail" aria-label="原文与依据"><p class="muted">选择主题或记录，查看原文与关联依据。</p></section></div>
+</section></div>
+<p id="kc-status" class="small muted" role="status"></p>
+<details class="card"><summary>数据状态与接入范围</summary><div id="kc-health"></div><p class="small muted">“刷新列表”只查询数据库。“更新旧档案”执行一次同步，结束后停止。新助手不依赖归档同步。</p></details>
+<details class="card"><summary>产品版本与未来规划</summary><p><b>V0.1 · 当前：</b>统一新旧记录、手动更新旧档案、按会话与来源复核的主题整理快照，宽泛主题不超过 10 个；明确显示归类与待处理数量。地图呈现整理结果，不代表用户已掌握。</p><p><b>V0.2 · 规划：</b>按需 AI 整理新增内容、概念卡片与重要笔记编辑、修订和撤销。</p><p><b>V0.3 · 规划：</b>概念级关系、局部地图展开、理解变化时间线。</p><p class="small muted">未来方向：语义检索与完整材料目录。上述规划尚未实现，本版不会后台自动调用模型。</p></details>
+<noscript><p>此页需要 JavaScript。仍可通过<a href="/">原归档入口</a>查看旧记录。</p></noscript>
+</div><script type="module" src="/static/knowledge-center.js?v=2"></script>
+{% endblock %}
