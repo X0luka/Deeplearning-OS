@@ -137,10 +137,40 @@ def main():
         assert reopened["session"]["zoom"] == 1.5 and reopened["notes"][0]["body"] == "Persistent CI note"
         assert request(19879, f"/api/documents/{doc['id']}/pdf") == raw_pdf
         assert json.loads(request(19878, "/aos/v1/describe"))["instance_id"] == identity
+        # Backup is refused while the instance lock is held by the live application.
+        backup = Path(".local/preparation") / (args.project + "-private-backup.tar.gz")
+        backup.parent.mkdir(parents=True, exist_ok=True)
+        import sys
+        maintenance = [sys.executable, "scripts/docker_data.py"]
+        denied = subprocess.run([*maintenance, "backup", str(backup), "--project", args.project],
+                                env=env, capture_output=True, timeout=180)
+        assert denied.returncode != 0 and b"instance_busy" in denied.stderr and not backup.exists()
+        compose("stop")
+        subprocess.run([*maintenance, "backup", str(backup), "--project", args.project],
+                       env=env, check=True, timeout=180)
+        denied = subprocess.run([*maintenance, "restore", str(backup), "--project", args.project],
+                                env=env, capture_output=True, timeout=180)
+        assert denied.returncode != 0 and b"restore_requires_empty_instance" in denied.stderr
+        # Only this newly created synthetic CI project is removed, never a user's project.
+        compose("down", "--volumes")
+        subprocess.run([*maintenance, "restore", str(backup), "--project", args.project],
+                       env=env, check=True, timeout=180)
+        compose("up", "-d", "--no-build", "--wait", "--wait-timeout", "100")
+        wait_ready()
+        assert json.loads(request(19877, "/api/v1/appearance"))["mode"] == "dark"
+        restored = json.loads(request(19877, "/api/v1/llm", token=host_token()))
+        assert any(c["id"] == connection["id"] and c["configured"] for c in restored["connections"])
+        assert fake_key not in json.dumps(restored)
+        reopened = json.loads(request(19879, f"/api/sessions/{session['id']}"))
+        assert reopened["session"]["zoom"] == 1.5 and reopened["notes"][0]["body"] == "Persistent CI note"
+        assert request(19879, f"/api/documents/{doc['id']}/pdf") == raw_pdf
+        assert json.loads(request(19878, "/aos/v1/describe"))["instance_id"] == identity
+        backup.unlink()
         folder = Path(".local/preparation")
         folder.mkdir(parents=True, exist_ok=True)
         report = {"status": "passed", "three_services": True, "http_pdf_upload_retrieve": True,
                   "settings_credentials_notes_position_persist_after_recreate": True,
+                  "backup_empty_volume_restore_and_busy_overwrite_rejection": True,
                   "write_auth_and_origin_rejection": True, "secrets_not_in_public_response": True,
                   "model_calls": 0, "image_target": env.get("DLOS_IMAGE_TARGET", "full"),
                   "limitations": "No real model response, native desktop, or full PDF parsing quality tested here."}

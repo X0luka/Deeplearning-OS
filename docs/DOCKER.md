@@ -30,15 +30,26 @@ docker compose start
 `docker compose down`会移除容器和项目网络，默认保留命名卷；再次up会复用同一项目卷。
 不要把`down --volumes`当普通退出命令，它会删除数据。更换Compose项目名称会创建另一份数据卷，旧数据不会自动迁移。
 
-更新前先停止容器并备份到一个全新的本地目录：
+更新前先停止容器，使用宿主 Python 3 保存完整备份（在源码目录执行）：
 
 ```sh
 docker compose stop
-docker compose cp app:/opt/dlos/.local/instances ./deeplearning-os-backup-before-update
+python scripts/docker_data.py backup ./deeplearning-os.private-backup.tar.gz
+docker compose start
 ```
 
-此命令要求容器仍存在，因此先stop，勿先down。复制的是完整本地实例，**包括密钥**，不要提交Git或分享给他人；它与INSTANCE_BACKUP.md中主动排除密钥的产品备份不同。
-备份和恢复演练仍需验收，不能仅凭复制命令成功就宣称可恢复。升级应从新源码构建后复用数据卷，保留旧镜像及备份；数据库跨版本兼容仍按发行说明判断。
+工具与运行中的产品使用同一实例锁；产品没停止会拒绝备份，不会替你停止服务。目标文件必须不存在。备份**包括密钥**，请保存在自己的私有位置，不提交Git或分享；这与INSTANCE_BACKUP.md中主动排除密钥的备份不同。
+
+恢复到一个全新的Compose项目，不覆盖原数据：
+
+```sh
+python scripts/docker_data.py restore ./deeplearning-os.private-backup.tar.gz --project deeplearning-os-restored
+docker compose --project-name deeplearning-os-restored up -d --no-build
+```
+
+先停止占用相同端口的旧实例；需要同时打开时给新项目配置三个不同端口。恢复工具只接受不存在的目标实例，拒绝覆盖已有资料，检查归档路径并保留文件权限。它使用已经构建的本地镜像，不下载或执行备份中的程序。
+
+恢复后逐项检查模型配置、论文、笔记、阅读进度、Wiki和对话，再决定是否继续升级。保留旧卷、镜像及备份；跨版本数据库兼容按发行说明判断。云端将演练合成数据的备份和空卷恢复，真实个人资料仍需自己保管。
 
 ## 网络配置
 
@@ -57,7 +68,7 @@ API密钥按现有产品方式保存于数据卷的私有文件；Docker管理�
 
 ## 验证与范围
 
-Docker CI将实际启动三服务，检查鉴权/来源拒绝、设置中的密钥不回显、PDF上传/原件取回、笔记与位置保存，以及删除并重建容器后数据保留。
+9f73e73的云端运行36881075254已通过core镜像的真实三服务启动与容器重建验收。Docker CI实际启动三服务，检查鉴权/来源拒绝、设置中的密钥不回显、PDF上传/原件取回、笔记与位置保存，以及删除并重建容器后数据保留。
 这些是HTTP与容器生命周期验证，不等于模型回答质量或增强PDF逐公式准确率。默认CI使用core，完整full镜像使用手动CI参数full_pdf。
 原有源码/桌面回归继续运行，Docker不会取代原版质量要求。
 
