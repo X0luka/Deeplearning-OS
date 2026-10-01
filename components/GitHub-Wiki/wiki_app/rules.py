@@ -28,6 +28,7 @@ RULES = {
     "snapshot_hash_mismatch": ("STORAGE.INTEGRITY", "stage", "快照内容与记录不一致", "停止使用受影响的快照并检查存储"),
     "analysis_timeout": ("ANALYSIS.TIME_BUDGET", "stage", "静态分析超过进程执行保护时限", "源码快照保留；检查慢文件后重试分析"),
     "architecture_analysis_failed": ("ANALYSIS.PROCESS_FAILED", "stage", "静态分析进程未完成", "源码快照保留；检查分析阶段后重试"),
+    "github_unavailable": ("INGEST.NETWORK", "stage", "暂时无法连接 GitHub 或取得有效响应", "检查 GitHub 网络通道、代理及服务状态后重试；已有版本仍可阅读"),
     "github_rate_limited": ("INGEST.RATE_LIMIT", "stage", "GitHub 限流，暂时无法取得仓库", "保留已有版本；限流恢复后显式重试"),
     "repository_or_ref_not_found": ("INGEST.NOT_FOUND", "stage", "公开仓库或指定版本不存在", "核对 GitHub 地址及分支或提交"),
     "file_parse_failed": ("ANALYSIS.FILE_FAILED", "local", "该文件未能完成结构解析", "其他文件继续；仍可阅读该文件文本"),
