@@ -359,3 +359,68 @@ async def test_operations_revision_keeps_instructions_out_of_runtime_flow(tmp_pa
     assert not result["partial"]
     assert audits == 2
     assert knowledge.load(store, version)["operations"]["steps"] == []
+
+
+async def test_structured_audit_issues_reach_source_revision(tmp_path, monkeypatch):
+    store, version = await prepared(tmp_path)
+    base = fake_model()
+    issue = {"type": "boundary", "detail": "Check src/a.py implementation ownership"}
+    revisions = []
+    queries = []
+    retrieve = knowledge.retrieve
+
+    def capture(evidence, request, graph):
+        queries.extend(request["queries"])
+        return retrieve(evidence, request, graph)
+
+    monkeypatch.setattr(knowledge, "retrieve", capture)
+
+    async def model(settings, task, payload):
+        if "approved" in task:
+            return {"approved": False, "issues": [issue]} if not revisions else {"approved": True, "issues": []}
+        if "依据补读实现修正" in task:
+            revisions.append(payload)
+            return payload["model"]
+        return await base(settings, task, payload)
+
+    result = await knowledge.build(store, version, model=model)
+    value = knowledge.load(store, version)
+    assert not result["partial"]
+    assert value["audit"]["approved"]
+    assert revisions and all(item == issue for item in revisions[0]["issues"])
+    assert "src/a.py" in queries
+
+    async def no_more_calls(*args):
+        raise AssertionError("Completed knowledge should be reused")
+
+    assert (await knowledge.build(store, version, model=no_more_calls))["cached"]
+
+
+async def test_content_revision_reuses_existing_diagram_contract_repair(tmp_path):
+    import copy
+
+    store, version = await prepared(tmp_path)
+    base = fake_model()
+    revision = []
+    repairs = []
+
+    async def model(settings, task, payload):
+        if "approved" in task:
+            return {"approved": bool(revision), "issues": [] if revision else ["源码归属需修正"]}
+        if "依据补读实现修正" in task:
+            revision.append(copy.deepcopy(payload["model"]))
+            result = copy.deepcopy(payload["model"])
+            result["nodes"] += [dict(result["nodes"][0], id="extra" + str(i)) for i in range(7)]
+            return result
+        if "validation" in payload and "allowed_evidence" in payload:
+            assert len(payload["model"]["nodes"]) == 9
+            repairs.append(payload)
+            return revision[0]
+        return await base(settings, task, payload)
+
+    result = await knowledge.build(store, version, model=model)
+    value = knowledge.load(store, version)
+    assert not result["partial"]
+    assert value["audit"]["approved"] and len(value["model"]["nodes"]) == 2
+    assert len(repairs) == 1
+    assert any(t["stage"] == "revision-contract-0" for t in value["trace"])

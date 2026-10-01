@@ -1053,26 +1053,30 @@ title不超过20汉字，responsibility不超过100字符，boundary不超过180
                 if not indexes or any(type(i) is not int or not 0 <= i < len(candidate_ids) for i in indexes):
                     raise ValueError("knowledge_reference_repair_failed")
                 unit["evidence"] = [candidate_ids[i] for i in dict.fromkeys(indexes)]
-        for repair_index in range(3):
-            try:
-                value = validate_model(proposal, domains, used)
-                break
-            except ValueError as exc:
-                prior_digest = digest(proposal)
-                proposal = await stage(
-                    "diagram-contract-" + str(repair_index),
-                    task
-                    + "\n必须满足最多7个节点。请合并职责相近的内部功能而非删除核心主题，合并节点的domains可以含多个主题。只用allowed_evidence中的编号，禁止编造。",
-                    {
-                        "model": proposal,
-                        "validation": str(exc)[:1800],
-                        "domains": [{k: d[k] for k in ("id", "title", "responsibility")} for d in domains],
-                        "allowed_evidence": list(used),
-                    },
-                )
-                if digest(proposal) == prior_digest:
-                    raise ValueError("knowledge_contract_no_progress") from exc
-        value = validate_model(proposal, domains, used)
+        async def enforce_contract(proposal, prefix):
+            for repair_index in range(3):
+                try:
+                    value = validate_model(proposal, domains, used)
+                    break
+                except ValueError as exc:
+                    prior_digest = digest(proposal)
+                    proposal = await stage(
+                        prefix + str(repair_index),
+                        task
+                        + "\n必须满足最多7个节点。请合并职责相近的内部功能而非删除核心主题，合并节点的domains可以含多个主题。只用allowed_evidence中的编号，禁止编造。",
+                        {
+                            "model": proposal,
+                            "validation": str(exc)[:1800],
+                            "domains": [{k: d[k] for k in ("id", "title", "responsibility")} for d in domains],
+                            "allowed_evidence": list(used),
+                        },
+                    )
+                    if digest(proposal) == prior_digest:
+                        raise ValueError("knowledge_contract_no_progress") from exc
+            value = validate_model(proposal, domains, used)
+            return value
+
+        value = await enforce_contract(proposal, "diagram-contract-")
         value["boundary"] = boundary_from_nodes(value["nodes"])
         audit_task = """审核给定对象是否真实且适合架构阅读。输出 {approved:布尔,issues:[具体问题]}。
     external表示实现归属本仓库外，不是部署位置；本地启动器启动外部仓库服务不改变源码归属。
@@ -1124,7 +1128,7 @@ title不超过20汉字，responsibility不超过100字符，boundary不超过180
             # An unsupported claim may need different implementation evidence,
             # not another rewrite based on the same README-oriented seed.
             terms = list(dict.fromkeys(re.findall(r"[A-Za-z_][A-Za-z0-9_./-]{2,}",
-                                                   " ".join(audit["issues"]))))
+                                                   json.dumps(audit["issues"], ensure_ascii=False))))
             extra = retrieve(evidence, {"queries": terms, "paths": []}, graph)
             keys = list(extra) + [k for unit in [value["summary"], value["boundary"]]
                                    + value["nodes"] + value["relations"] for k in unit["evidence"]]
@@ -1139,7 +1143,7 @@ title不超过20汉字，responsibility不超过100字符，boundary不超过180
                 "证据仍不支持的外部系统或关系应删除或收窄，并记录遗漏原因；不得用不相干代码凑引用。",
                 repair_payload,
             )
-            value = validate_model(proposal, domains, used)
+            value = await enforce_contract(proposal, "revision-contract-")
             value["boundary"] = boundary_from_nodes(value["nodes"])
             audit = await audit_model(value, "review-revised")
         if audit.get("approved") is not True:
