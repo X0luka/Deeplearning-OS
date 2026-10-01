@@ -126,3 +126,16 @@ def test_discovered_limits_and_unknown_are_not_guessed():
     assert model_limits(conn,model)['context_tokens']==123456
     model=model_item('other',{'context_length':'invalid'})
     assert model_limits(conn,model)['context_tokens'] is None
+
+
+def test_new_quality_budget_preserves_saved_user_choices(tmp_path):
+    directory = tmp_path / 'llm'
+    store = ModelStore(directory)
+    assert store.read()['defaults']['max_output_tokens'] == 16384
+    # A saved older budget, including task overrides, is a deliberate user choice.
+    store.settings('global', {'max_output_tokens': 3000, 'thinking': 'off'})
+    store.settings('paper:reading', {'max_output_tokens': 8192})
+    reopened = ModelStore(directory)
+    assert reopened.read()['defaults']['max_output_tokens'] == 3000
+    assert reopened.read()['defaults']['thinking'] == 'off'
+    assert reopened.read()['overrides']['paper:reading']['max_output_tokens'] == 8192

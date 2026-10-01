@@ -66,7 +66,8 @@ export function createLibrary({container, onOpen, onAction, host=document}) {
     menu.style.left=`${Math.max(8,Math.min(r.right,host.defaultView.innerWidth-menu.offsetWidth-8))}px`;
     menu.style.top=`${Math.max(8,Math.min(r.bottom,host.defaultView.innerHeight-menu.offsetHeight-8))}px`;
   }
-  function draw(){
+  function draw(preserveMenu=false){
+    const opened=preserveMenu&&menu.matches(':popover-open')?trigger?.closest('.library-file')?.dataset.document:null;
     close();container.replaceChildren();const files=showTrash?data.trash:data.items;
     trash.textContent=showTrash?'← 返回文件库':`回收站${data.trash.length?' · '+data.trash.length:''}`;
     trash.setAttribute('aria-pressed',String(showTrash));
@@ -81,7 +82,8 @@ export function createLibrary({container, onOpen, onAction, host=document}) {
       const more=host.createElement('button');more.type='button';more.className='file-more';more.textContent='⋮';more.setAttribute('aria-label',item.title+' 的更多操作');more.setAttribute('aria-haspopup','menu');more.setAttribute('aria-expanded','false');more.onclick=()=>openMenu(item,more);
       row.append(open,more);container.append(row);
     }
+    if(opened){const item=files.find(value=>value.document===opened);const row=[...container.querySelectorAll('.library-file')].find(value=>value.dataset.document===opened);if(item&&row)openMenu(item,row.querySelector('.file-more'));}
   }
   trash.onclick=()=>{showTrash=!showTrash;draw();};
-  return {update(value,document){if(current===document&&JSON.stringify(data)===JSON.stringify(value))return;data=value;current=document;draw();},close};
+  return {update(value,document){if(current===document&&JSON.stringify(data)===JSON.stringify(value))return;data=value;current=document;draw(true);},close};
 }

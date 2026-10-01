@@ -75,3 +75,5 @@ API密钥按现有产品方式保存于数据卷的私有文件；Docker管理�
 参考：[Compose网络](https://docs.docker.com/compose/how-tos/networking/)、[服务配置](https://docs.docker.com/reference/compose-file/services/)、[数据卷](https://docs.docker.com/engine/storage/volumes/)。
 
 PDF解析会同时考虑宿主可用内存和容器cgroup内存配额/当前占用，内存不足时沿用暂停和检查点恢复流程，不把宿主总内存误认为容器额度。full镜像的专项CI还会实际解析一页合成PDF并核对页范围检查点复用；它不替代复杂论文或扫描件的质量验收。
+
+新建实例默认输出额度为16384，避免重现已有质量样本中的3000额度截断；这只是允许的上限，不是每次必须生成这么多。已有实例设置保持不变，实际生成长度由任务和模型决定。若所选服务商模型上限较低，界面会显示已知上限并要求调整；不会静默缩短输出。
