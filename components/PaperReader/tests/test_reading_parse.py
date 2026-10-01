@@ -180,3 +180,24 @@ def test_worker_reports_missing_dependency_exit(tmp_path, monkeypatch, code, ret
     with (tmp_path / "worker.log").open("wb") as log:
         with pytest.raises(parser.ParseError, match=code):
             parser.worker([sys.executable, "-c", "raise SystemExit("+str(returncode)+")"], log, lambda: None)
+
+
+@pytest.mark.parametrize('layout', ['v2', 'v1'])
+def test_memory_respects_container_limit_and_shared_usage(monkeypatch, layout):
+    gib = 1024 ** 3
+    files = {'/proc/meminfo': f'MemTotal: {16*gib//1024} kB\nMemAvailable: {12*gib//1024} kB\n'}
+    limit, usage = (('/sys/fs/cgroup/memory.max', '/sys/fs/cgroup/memory.current') if layout == 'v2' else
+                    ('/sys/fs/cgroup/memory/memory.limit_in_bytes', '/sys/fs/cgroup/memory/memory.usage_in_bytes'))
+    files.update({limit: str(4*gib), usage: str(3*gib)})
+    def read(path, *args, **kwargs):
+        if str(path) not in files:
+            raise FileNotFoundError(str(path))
+        return files[str(path)]
+    monkeypatch.setattr(Path, 'read_text', read)
+    assert parser.memory()['MemTotal'] == 4*gib
+    assert parser.memory()['MemAvailable'] == gib
+    files[usage] = str(5*gib)
+    assert parser.memory()['MemAvailable'] == 0
+    files[limit] = 'max' if layout == 'v2' else str(2**63-4096)
+    assert parser.memory()['MemTotal'] == 16*gib
+    assert parser.memory()['MemAvailable'] == 12*gib
