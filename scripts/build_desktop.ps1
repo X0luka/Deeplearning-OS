@@ -30,6 +30,8 @@ if ($LASTEXITCODE -ne 0) { throw "Desktop compilation failed" }
 if ($LASTEXITCODE -ne 0) { throw "Configuration-test compilation failed" }
 & $compiler @common /target:winexe /platform:x64 /main:PaneTest /r:System.Drawing.dll /r:System.Windows.Forms.dll "/out:$(Join-Path $OutputDirectory 'DesktopPaneTest.exe')" "/r:$(Join-Path $WebView2Directory $refs[0])" "/r:$(Join-Path $WebView2Directory $refs[1])" (Join-Path $source "desktop/AgentOS.cs") (Join-Path $source "desktop/DesktopConfiguration.cs") (Join-Path $source "tests/DesktopPaneTest.cs")
 if ($LASTEXITCODE -ne 0) { throw "Pane-test compilation failed" }
+& $compiler @common /target:winexe /platform:x64 /main:PaneTest /r:System.Drawing.dll /r:System.Windows.Forms.dll "/out:$(Join-Path $OutputDirectory 'DesktopCitationTest.exe')" "/r:$(Join-Path $WebView2Directory $refs[0])" "/r:$(Join-Path $WebView2Directory $refs[1])" (Join-Path $source "desktop/AgentOS.cs") (Join-Path $source "desktop/DesktopConfiguration.cs") (Join-Path $source "tests/DesktopCitationTest.cs")
+if ($LASTEXITCODE -ne 0) { throw "Citation-test compilation failed" }
 Copy-Item -LiteralPath (Join-Path $source "desktop/desktop.json") -Destination (Join-Path $OutputDirectory "desktop.json")
 & (Join-Path $OutputDirectory "DesktopConfigurationTest.exe") $OutputDirectory
 if ($LASTEXITCODE -ne 0) { throw "Configuration validation failed" }

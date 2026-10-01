@@ -1,0 +1,89 @@
+{
+  "checked_at": "2026-10-01T14:26:25.220966+00:00",
+  "scope": "Read-only comparison with current original working-tree source; LF-normalized UTF-8 bytes. No user data or credentials inspected.",
+  "reference_kind": "working tree, including uncommitted changes; not ancestry commit alone",
+  "files": [
+    {
+      "component": "AgentOS-K",
+      "path": "aos/assistant/service.py",
+      "reference_sha256": "22e176bd3c05c5e36305195f1edf63b74cd800cdde741740be916885ce980b4a",
+      "candidate_sha256": "22e176bd3c05c5e36305195f1edf63b74cd800cdde741740be916885ce980b4a",
+      "equal": true
+    },
+    {
+      "component": "AgentOS-K",
+      "path": "aos/assistant/context.py",
+      "reference_sha256": "8421c067fc12537f939969d37125cd6d7eb917f4d61dc40bd15c6a6bc83b82d0",
+      "candidate_sha256": "8421c067fc12537f939969d37125cd6d7eb917f4d61dc40bd15c6a6bc83b82d0",
+      "equal": true
+    },
+    {
+      "component": "AgentOS-K",
+      "path": "aos/assistant/evidence.py",
+      "reference_sha256": "4fe7bd338571b3f1446c9c3e6b0aaca0fda6a99678f7add05319b20ea9918f5e",
+      "candidate_sha256": "4fe7bd338571b3f1446c9c3e6b0aaca0fda6a99678f7add05319b20ea9918f5e",
+      "equal": true
+    },
+    {
+      "component": "AgentOS-K",
+      "path": "aos/assistant/store.py",
+      "reference_sha256": "665fd6cae14fc56386a372b12fc233a9461169bb83133d037eaeea34afad3294",
+      "candidate_sha256": "665fd6cae14fc56386a372b12fc233a9461169bb83133d037eaeea34afad3294",
+      "equal": true
+    },
+    {
+      "component": "PaperReader",
+      "path": "paper_reader/reading_jobs.py",
+      "reference_sha256": "6b848b922cde1d7f43802772f741866f35006df932a7f38fc5a6c41c8e2e89ca",
+      "candidate_sha256": "6b848b922cde1d7f43802772f741866f35006df932a7f38fc5a6c41c8e2e89ca",
+      "equal": true
+    },
+    {
+      "component": "PaperReader",
+      "path": "paper_reader/reading_review.py",
+      "reference_sha256": "4bccfeb06c7fbbb74f600de1fa006f414de1fe23f190604fe9c783bc669d35b4",
+      "candidate_sha256": "4bccfeb06c7fbbb74f600de1fa006f414de1fe23f190604fe9c783bc669d35b4",
+      "equal": true
+    },
+    {
+      "component": "PaperReader",
+      "path": "paper_reader/reading_structure.py",
+      "reference_sha256": "f4b453ec85afa3acc63db17d8d92f1a0924bf512be6d7f1ad70d7c907234f9f2",
+      "candidate_sha256": "f4b453ec85afa3acc63db17d8d92f1a0924bf512be6d7f1ad70d7c907234f9f2",
+      "equal": true
+    },
+    {
+      "component": "PaperReader",
+      "path": "paper_reader/paper_content.py",
+      "reference_sha256": "30115112d508e5d0a1144c1b3161dc9565659c266431e2411b2da32c3c8a782d",
+      "candidate_sha256": "30115112d508e5d0a1144c1b3161dc9565659c266431e2411b2da32c3c8a782d",
+      "equal": true
+    },
+    {
+      "component": "PaperReader",
+      "path": "paper_reader/translations.py",
+      "reference_sha256": "7fcec6c07d845c3eba94bcfbed328c38fb015d225a969778978787b3c41af1ba",
+      "candidate_sha256": "7fcec6c07d845c3eba94bcfbed328c38fb015d225a969778978787b3c41af1ba",
+      "equal": true
+    },
+    {
+      "component": "PaperReader",
+      "path": "paper_reader/reading_assistant.py",
+      "reference_sha256": "168a23beb400c930d522e750123cc3e2c5c4890dcc145a0f8187bddef75df70a",
+      "candidate_sha256": "168a23beb400c930d522e750123cc3e2c5c4890dcc145a0f8187bddef75df70a",
+      "equal": true
+    },
+    {
+      "component": "GitHub-Wiki",
+      "path": "wiki_app/architecture/facts.py",
+      "reference_sha256": "a498423f923d368d7d92160636c07f3f08bc60f7758c9fd5c1d172dd55cbaf5d",
+      "candidate_sha256": "a498423f923d368d7d92160636c07f3f08bc60f7758c9fd5c1d172dd55cbaf5d",
+      "equal": true
+    }
+  ],
+  "limitations": [
+    "Source equality is not generated-output quality acceptance.",
+    "No original private conversation or user-approved translation output copied.",
+    "PDF runtime resilience and Wiki generation fixes are separately reviewed; not claimed byte-equal."
+  ]
+}

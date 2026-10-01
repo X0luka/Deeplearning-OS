@@ -18,6 +18,9 @@ using Microsoft.Web.WebView2.WinForms;
 class AgentOS : Form {
     readonly WebView2 view = new WebView2();
     readonly Panel content = new Panel();
+    readonly Panel workspace = new Panel();
+    readonly Button returnConversation = new Button();
+    string citationOrigin;
     readonly FlowLayoutPanel navigation = new FlowLayoutPanel();
     readonly Dictionary<string, WebView2> panes = new Dictionary<string, WebView2>();
     readonly Dictionary<string, Task> initialization = new Dictionary<string, Task>();
@@ -65,6 +68,7 @@ class AgentOS : Form {
         StartPosition = FormStartPosition.CenterScreen;
         view.Dock = DockStyle.Fill;
         status.Dock = DockStyle.Top; status.Height = 36; status.Padding = new Padding(12,8,0,0);
+        status.TextChanged += (a,b) => { status.Visible = !String.IsNullOrEmpty(status.Text); };
         status.Text = "正在启动 Deeplearning-OS…";
         retry.Text = "重试启动"; retry.Dock = DockStyle.Bottom; retry.Height = 36; retry.Visible = false;
         retry.Click += async (s,e) => {
@@ -91,7 +95,12 @@ class AgentOS : Form {
             external.Click+=(x,y)=>OpenExternal(panes[activePane].Source.AbsoluteUri);
             menu.Closed+=(x,y)=>menu.Dispose();menu.Show(more,new Point(more.Width,0));
         };
-        Controls.Add(content); Controls.Add(navigation); Controls.Add(status); Controls.Add(retry);
+        workspace.Dock=DockStyle.Fill;workspace.Controls.Add(content);
+        returnConversation.Text="← 返回原会话";returnConversation.AccessibleName="返回原会话";
+        returnConversation.Dock=DockStyle.Top;returnConversation.Height=40;returnConversation.TextAlign=ContentAlignment.MiddleLeft;returnConversation.Visible=false;
+        returnConversation.Click+=async (a,b)=>{if(citationOrigin!=null)try{await ActivatePane(citationOrigin,null);}catch(Exception ex){status.Text="返回失败："+ex.Message;}};
+        workspace.Controls.Add(returnConversation);
+        Controls.Add(workspace); Controls.Add(navigation); Controls.Add(status); Controls.Add(retry);
         if(startServices) Shown += async (s,e) => {
             try {
                 CoreWebView2Environment.GetAvailableBrowserVersionString();
@@ -145,21 +154,38 @@ class AgentOS : Form {
         }");
         pane.CoreWebView2.NewWindowRequested += async (a,b) => {
             b.Handled=true;string target=PaneFor(b.Uri,key);
-            try {if(target!=null)await ActivatePane(target,b.Uri);else if(b.IsUserInitiated)OpenExternal(b.Uri);}catch(Exception ex){status.Text="页面打开失败："+ex.Message;}
+            try {if(target!=null)await ActivatePane(key=="citation"?"citation":target,b.Uri);else if(b.IsUserInitiated)OpenExternal(b.Uri);}catch(Exception ex){status.Text="页面打开失败："+ex.Message;}
         };
         pane.CoreWebView2.NavigationStarting += async (a,b) => {
             string target=PaneFor(b.Uri,key);
-            if(target==key)return;
+            if(target==key || (key=="citation" && target!=null))return;
             b.Cancel=true;
-            try {if(target!=null)await ActivatePane(target,b.Uri);else if(b.IsUserInitiated)OpenExternal(b.Uri);}catch(Exception ex){status.Text="页面打开失败："+ex.Message;}
+            try {if(target!=null)await ActivatePane(key=="citation"?"citation":target,b.Uri);else if(b.IsUserInitiated)OpenExternal(b.Uri);}catch(Exception ex){status.Text="页面打开失败："+ex.Message;}
         };
-        pane.CoreWebView2.WebMessageReceived += (a,b) => {
+        pane.CoreWebView2.WebMessageReceived += async (a,b) => {
             Uri source;
-            if(Uri.TryCreate(b.Source,UriKind.Absolute,out source) && source.GetLeftPart(UriPartial.Authority)==hostOrigin && b.TryGetWebMessageAsString()=="exit")Close();
+            if(!Uri.TryCreate(b.Source,UriKind.Absolute,out source) || PaneFor(b.Source,key)==null)return;
+            string message;
+            try{message=b.TryGetWebMessageAsString();}catch{return;}
+            if(message=="exit" && source.GetLeftPart(UriPartial.Authority)==hostOrigin){Close();return;}
+            if(activePane!=key || message==null || message.Length>8192)return;
+            try{
+                var request=json.Deserialize<Dictionary<string,object>>(message);
+                if(request!=null && request.ContainsKey("type") && Convert.ToString(request["type"])=="open-citation" && request.ContainsKey("url"))
+                    await OpenCitation(key,Convert.ToString(request["url"]));
+            }catch(Exception ex){status.Text="引用未打开："+ex.Message;}
         };
         pane.CoreWebView2.NavigationCompleted += (a,b) => {
-            if(key==activePane)status.Text=b.IsSuccess?"Deeplearning-OS · 页面切换保留阅读与会话状态":"页面暂不可用，可切换其他功能或在更多菜单中返回。";
+            if(key==activePane)status.Text=b.IsSuccess?String.Empty:"页面暂不可用，可切换其他功能或在更多菜单中返回。";
         };
+    }
+    async Task OpenCitation(string origin, string url) {
+        Uri target;
+        if(!Uri.TryCreate(url,UriKind.Absolute,out target) || (target.Scheme!="http" && target.Scheme!="https") || target.UserInfo.Length!=0)return;
+        if(PaneFor(url,origin)==null){OpenExternal(url);return;}
+        if(origin!="citation")citationOrigin=origin;
+        if(citationOrigin==null)return;
+        await ActivatePane("citation",url);
     }
     async Task ActivatePane(string key, string destination) {
         if(hostOrigin==null)return;
@@ -181,11 +207,11 @@ class AgentOS : Form {
             else if(productRoutes.ContainsKey(key) && uri.AbsolutePath=="/" && string.IsNullOrEmpty(uri.Query))target=null;
             else if(pane.Source.AbsoluteUri==target)target=null;
         }
-        activePane=key;pane.Visible=true;pane.BringToFront();
+        activePane=key;returnConversation.Visible=key=="citation" && citationOrigin!=null;pane.Visible=true;pane.BringToFront();
         foreach(var pair in panes)if(pair.Key!=key)pair.Value.Visible=false;
         foreach(var pair in navButtons)pair.Value.BackColor=pair.Key==key?Color.FromArgb(65,65,65):navigation.BackColor;
         if(target!=null)pane.CoreWebView2.Navigate(target);
-        pane.Focus();status.Text="Deeplearning-OS · 页面切换保留阅读与会话状态";
+        pane.Focus();status.Text=String.Empty;
     }
     void OpenExternal(string url) {
         Uri uri;

@@ -36,7 +36,8 @@ def stage(destination, distribution, user, instance, ports):
              "components/AgentOS-K/desktop/DesktopConfiguration.cs",
              "components/AgentOS-K/desktop/desktop.json",
              "components/AgentOS-K/tests/DesktopConfigurationTest.cs",
-             "components/AgentOS-K/tests/DesktopPaneTest.cs"]
+             "components/AgentOS-K/tests/DesktopPaneTest.cs",
+             "components/AgentOS-K/tests/DesktopCitationTest.cs"]
     for name in sources:
         path=destination/name;path.parent.mkdir(parents=True,exist_ok=True)
         shutil.copy2(ROOT/name,path)
