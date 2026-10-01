@@ -66,6 +66,21 @@ class ReaderStore(Store):
         from .paper_content import load
         content = load(self, identity)
         if content:
+            # Read-time metadata keeps immutable source bytes, IDs and saved names intact.
+            source = content.get("source", {})
+            title = source.get("title", "")
+            if not isinstance(title, str):
+                title = ""
+            if not title:
+                first = next(iter(content.get("blocks", [])), {})
+                if first.get("kind") == "h1":
+                    candidate = first.get("text", "").strip()
+                    if candidate.casefold() not in {"abstract", "introduction", "摘要", "引言", "references"}:
+                        title = candidate
+            item["display_title"] = " ".join(title.split())[:300] or item["name"]
+            item["aliases"] = list(dict.fromkeys(value for value in
+                [item["name"], item["display_title"], source.get("url"), source.get("html_url")]
+                if isinstance(value, str) and value))
             item["content_version"] = content["parse_sha256"]
             item["content_ready"] = True
             item["state"] = "html" if item["state"] == "html" else "ready"

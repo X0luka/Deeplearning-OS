@@ -86,6 +86,20 @@ def fetch(url, limit=30 * 1024 * 1024):
     raise ValueError("source_redirect_limit")
 
 
+def paper_title(text):
+    """Extract declared paper metadata; do not ask a model to invent a title."""
+    soup = BeautifulSoup(text, "html.parser")
+    meta = soup.find("meta", attrs={"name": re.compile("^citation_title$", re.I)})
+    heading = soup.select_one("h1.ltx_title_document, h1.title")
+    title = meta.get("content", "") if meta else ""
+    if not title and heading:
+        heading = BeautifulSoup(str(heading), "html.parser")
+        for descriptor in heading.select(".descriptor"):
+            descriptor.decompose()
+        title = heading.get_text(" ", strip=True)
+    return re.sub(r"\s+", " ", title).strip()[:300]
+
+
 def full_html(text):
     soup = BeautifulSoup(text, "html.parser")
     root = soup.find("article") or soup.find("main")
@@ -102,9 +116,11 @@ def resolve(url):
     arxiv = re.fullmatch(r"/(?:abs|html|pdf)/([0-9]{4}\.[0-9]{4,5}(?:v[0-9]+)?)(?:\.pdf)?/?", p.path)
     if p.hostname in {"arxiv.org", "www.arxiv.org"} and arxiv:
         identity = arxiv[1]
+        title = ""
         # Unversioned requests resolve the version before requesting either representation.
         if not re.search(r"v[0-9]+$", identity):
             raw, _, _ = fetch("https://arxiv.org/abs/" + identity)
+            title = paper_title(raw)
             soup = BeautifulSoup(raw, "html.parser")
             match = re.search(re.escape(identity) + r"v[0-9]+", soup.get_text())
             if not match:
@@ -116,6 +132,7 @@ def resolve(url):
             content, html_url, _ = fetch(html_url)
             if full_html(content):
                 source = content.decode("utf-8")
+                title = title or paper_title(source)
         except (ValueError, httpx.HTTPError):
             pass
         pdf_url = "https://arxiv.org/pdf/" + identity
@@ -128,7 +145,7 @@ def resolve(url):
                 raise
             pdf = None
         return {"html": source, "html_url": html_url, "pdf": pdf,
-                "url": pdf_url, "name": identity + ".pdf"}
+                "url": pdf_url, "name": identity + ".pdf", "title": title}
     content, url, mime = fetch(url)
     if content.startswith(b"%PDF-"):
         return {"pdf": content, "html": None, "url": url,
@@ -141,7 +158,8 @@ def resolve(url):
     if full_html(text):
         # Generic HTML is kept independently: do not pair unverified PDF versions.
         return {"pdf": None, "html": text, "html_url": url, "url": url,
-                "name": (soup.title.get_text() if soup.title else "论文 HTML")[:180]}
+                "name": (soup.title.get_text() if soup.title else "论文 HTML")[:180],
+                "title": paper_title(text)}
     links = ([meta.get("content")] if meta else []) + [
         a["href"] for a in soup.select("a[href]")
         if urlsplit(a["href"]).path.lower().endswith(".pdf")]

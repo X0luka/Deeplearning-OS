@@ -60,7 +60,8 @@ def install(app, store):
         doc = store.document(identity)
         return {
             "id": identity,
-            "title": doc["name"],
+            "title": doc.get("display_title") or doc["name"],
+            "aliases": doc.get("aliases", [doc["name"]]),
             "version": doc.get("content_version") or "",
             "ready": bool(doc.get("content_ready")),
             "context_mode": "full_text",
