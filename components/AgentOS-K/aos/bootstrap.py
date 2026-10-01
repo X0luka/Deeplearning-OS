@@ -90,6 +90,7 @@ def assemble(args, providers, options=(), session_ledger=None):
                      startup_errors={e.product.id: e.startup_errors for e in entries},
                      sync_services=services,
                      clients=[e.client for e in entries], model_store=model_store, model_tasks=model_tasks,
+                     network_channels={e.product.id: e.network_channel for e in entries if e.network_channel},
                      assistant_providers={e.product.id:{"url":e.product.api_url.rstrip("/"),"name":e.product.name,"section":e.assistant_section,"runtime":registry[e.product.id][2]} for e in entries if e.assistant_section})
     app.state.worker_command = worker.command if entries else ()
     app.state.desktop = session_ledger is not None

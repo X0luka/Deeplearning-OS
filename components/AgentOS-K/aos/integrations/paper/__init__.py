@@ -27,4 +27,4 @@ def create(args):
                       "--data-dir", str(args.paper_data_dir.resolve() if args.paper_data_dir is not None else directory / "var/reader")), directory,
                       url.rstrip("/") + "/aos/v1/describe", "api", product_id=product.id)
     client = httpx.AsyncClient(base_url=url, timeout=10, trust_env=False)
-    return Integration(product, client, HistoryHttpAdapter(client), [service], autostart=False, assistant_section="paper", model_tasks={"chat": "论文对话", "reading": "中文通读"})
+    return Integration(product, client, HistoryHttpAdapter(client), [service], autostart=False, assistant_section="paper", network_channel="paper", model_tasks={"chat": "论文对话", "reading": "中文通读"})

@@ -24,6 +24,7 @@ class Integration:
     startup_errors: dict[str, str] = field(default_factory=dict)
     model_tasks: dict[str, str] = field(default_factory=dict)
     assistant_section: str = ""
+    network_channel: str = ""
 
 
 def local_url(value):

@@ -33,4 +33,4 @@ def create(args):
     client = httpx.AsyncClient(base_url=url, timeout=10, trust_env=False)
     return Integration(product, client, WikiHttpAdapter(client), [service],
                        preferred=True, autostart=args.autostart or args.start_wiki,
-                       assistant_section="wiki", model_tasks={"chat": "源码对话", "structured": "证据与架构标注", "knowledge": "Wiki 知识生成"})
+                       assistant_section="wiki", network_channel="wiki", model_tasks={"chat": "源码对话", "structured": "证据与架构标注", "knowledge": "Wiki 知识生成"})

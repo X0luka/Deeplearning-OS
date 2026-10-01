@@ -29,7 +29,7 @@ class AppearanceInput(BaseModel):
 def create_app(
     product, adapter, archive, allow_query=False, runtime=None, registry=None, autostart=(),
     startup_errors=None, clients=(), model_store=None, model_tasks=None, assistant_providers=None,
-    sync_services=None
+    sync_services=None, network_channels=None
 ) -> FastAPI:
     if registry is None:
         registry = {product.id: (product, adapter, runtime)} if product else {}
@@ -377,7 +377,7 @@ def create_app(
     if model_store is not None:
         from aos.llm.routes import install
         install(app, model_store, model_tasks or {}, templates, check_write,
-                [e[0] for e in registry.values()])
+                [e[0] for e in registry.values()], network_channels=network_channels)
     if model_store:
         from aos.assistant.routes import install as install_assistant
         install_assistant(app, model_store, assistant_providers or {}, archive, check_write, token)
