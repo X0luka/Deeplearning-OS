@@ -1,0 +1,40 @@
+name: 问题报告
+description: 报告安装、Reader、Wiki、助手或数据恢复问题。
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: "请勿上传API密钥、私人资料、数据库或完整容器备份。只提供脱敏的最小复现。"
+  - type: input
+    id: version
+    attributes:
+      label: 提交或版本
+      description: 可运行 git rev-parse --short HEAD 查看。
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 运行环境
+      description: 操作系统、Docker或源码/桌面方式、相关工具版本；网络仅说明直连或代理模式，不提供凭据。
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤与实际结果
+      description: 从哪个页面开始、执行了什么、错误出现在哪一步。涉及内容时优先使用公开样本。
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期结果
+      description: 如果旧版本能正常使用，请注明对应版本与差异。
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 脱敏证据
+      description: 可提供错误码、截图或最小日志；说明是否已经产生模型调用，费用不确定时不要重复提交相同任务。
