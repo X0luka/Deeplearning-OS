@@ -160,7 +160,7 @@ async def test_http_auth_scope_and_idempotency(tmp_path):
     )
     connection = models.read()["connections"][0]["id"]
     models.mutate(lambda s: s["connections"][0]["models"].append({**model_item("test"), "limits": {"context_tokens": 64000, "max_output_tokens": 8192}}))
-    models.settings("global", {"selection": {"connection": connection, "model": "test"}})
+    models.settings("global", {"selection": {"connection": connection, "model": "test"}, "max_output_tokens": 3000})
     app = create_app(None, None, SQLiteArchive(tmp_path / "archive.db"), model_store=models)
 
     async def offline(s, m, t, emit):

@@ -73,3 +73,5 @@ API密钥按现有产品方式保存于数据卷的私有文件；Docker管理�
 原有源码/桌面回归继续运行，Docker不会取代原版质量要求。
 
 参考：[Compose网络](https://docs.docker.com/compose/how-tos/networking/)、[服务配置](https://docs.docker.com/reference/compose-file/services/)、[数据卷](https://docs.docker.com/engine/storage/volumes/)。
+
+新建实例默认输出额度为16384，避免重现已有质量样本中的3000额度截断；这只是允许的上限，不是每次必须生成这么多。已有实例设置保持不变，实际生成长度由任务和模型决定。若所选服务商模型上限较低，界面会显示已知上限并要求调整；不会静默缩短输出。
