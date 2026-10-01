@@ -48,8 +48,11 @@ jobs:
       - name: Build and type-check frontends
         run: python3 scripts/prepare_frontend.py
       - name: Prepare Chromium dependencies on disposable hosted VM
+        timeout-minutes: 10
         run: |
           test "$RUNNER_ENVIRONMENT" = github-hosted
+          # Bound stalled package mirrors on this disposable runner only.
+          printf '%s\n' 'Acquire::Retries "2";' 'Acquire::http::Timeout "30";' 'Acquire::https::Timeout "30";' | sudo tee /etc/apt/apt.conf.d/99-dlos-ci-network >/dev/null
           .local/tools/node/bin/node node_modules/playwright/cli.js install-deps chromium
           python3 scripts/prepare_browser.py
       - name: Frontend regressions (serial, isolated Chromium)
