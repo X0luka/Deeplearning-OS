@@ -73,3 +73,5 @@ API密钥按现有产品方式保存于数据卷的私有文件；Docker管理�
 原有源码/桌面回归继续运行，Docker不会取代原版质量要求。
 
 参考：[Compose网络](https://docs.docker.com/compose/how-tos/networking/)、[服务配置](https://docs.docker.com/reference/compose-file/services/)、[数据卷](https://docs.docker.com/engine/storage/volumes/)。
+
+PDF解析会同时考虑宿主可用内存和容器cgroup内存配额/当前占用，内存不足时沿用暂停和检查点恢复流程，不把宿主总内存误认为容器额度。full镜像的专项CI还会实际解析一页合成PDF并核对页范围检查点复用；它不替代复杂论文或扫描件的质量验收。

@@ -40,6 +40,20 @@ def memory():
     for line in Path("/proc/meminfo").read_text().splitlines():
         key, value = line.split(":", 1)
         values[key] = int(value.split()[0]) * 1024
+    # /proc/meminfo can describe the host even when Docker enforces a smaller limit.
+    # Modern cgroup namespaces expose this container's accounting at these roots.
+    for limit_path, usage_path in (
+        ("/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory.current"),
+        ("/sys/fs/cgroup/memory/memory.limit_in_bytes", "/sys/fs/cgroup/memory/memory.usage_in_bytes"),
+    ):
+        try:
+            limit = int(Path(limit_path).read_text().strip())
+            used = int(Path(usage_path).read_text().strip())
+        except (OSError, ValueError):  # Includes v2's explicit unlimited value, "max".
+            continue
+        if limit > 0 and used >= 0:
+            values["MemTotal"] = min(values["MemTotal"], limit)
+            values["MemAvailable"] = min(values["MemAvailable"], max(0, limit - used))
     return values
 
 

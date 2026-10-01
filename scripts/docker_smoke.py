@@ -125,6 +125,47 @@ def main():
         request(19879, "/api/notes", {"session": session["id"], "body": "Persistent CI note",
                 "parse_sha256": doc["parsed"]["parse_sha256"]}, paper_token, expected=201)
         assert request(19879, f"/api/documents/{doc['id']}/pdf") == raw_pdf
+        full_pdf_verified = False
+        if env.get("DLOS_IMAGE_TARGET", "full") == "full":
+            # Exercise the shipped parser as the real nonroot runtime user, offline.
+            parser_code = r'''
+import json,os,sys
+from pathlib import Path
+root=Path('/opt/dlos')
+sys.path[:0]=[str(root/'components/AgentOS-K'),str(root/'components/PaperReader')]
+from aos.desktop_instance import plan
+value=plan(root,'dev-docker',(19877,19878,19879))
+os.environ.update(value.environment())
+from paper_reader import reading_parse
+assert reading_parse.memory()['MemTotal'] <= 4*1024**3
+folder=value.path('reader')/'container-parser-acceptance'
+folder.mkdir()
+pdf=folder/'input.pdf'
+import base64
+pdf.write_bytes(base64.b64decode(sys.argv[1]))
+output=folder/'output';output.mkdir()
+try:
+    reading_parse.parse(pdf,output,'c'*64,os.environ['PAPER_DOCLING_PYTHON'],lambda:None)
+except Exception:
+    log=output/'parser.log'
+    if log.exists():print(log.read_text(errors='replace')[-6000:],file=sys.stderr)
+    raise
+state=json.loads((output/'parse-progress.json').read_text())
+assert state['done']==state['total']==1 and state['status']=='completed',state
+before={str(p.relative_to(output)):(reading_parse.sha(p),p.stat().st_mtime_ns) for p in output.rglob('*') if p.is_file()}
+reading_parse.parse(pdf,output,'c'*64,os.environ['PAPER_DOCLING_PYTHON'],lambda:None)
+after={str(p.relative_to(output)):(reading_parse.sha(p),p.stat().st_mtime_ns) for p in output.rglob('*') if p.is_file()}
+# The progress ledger may be rewritten; completed page artifacts must be reused.
+assert {k:v for k,v in before.items() if k.startswith('parse-chunks/')} == {k:v for k,v in after.items() if k.startswith('parse-chunks/')}
+assert any(k.startswith('parse-chunks/') and k.endswith('source.html') for k in before)
+assert 'Container persistence fixture' in (output/'source.html').read_text()
+print('full PDF runtime and checkpoint reuse passed')
+'''
+            import base64
+            subprocess.run([*command, "exec", "-T", "app", "components/PaperReader/.venv/bin/python",
+                            "-c", parser_code, base64.b64encode(raw_pdf).decode()],
+                           env=env, check=True, timeout=1200)
+            full_pdf_verified = True
         # Recreate the container, retaining only the project volume.
         compose("down")
         compose("up", "-d", "--no-build", "--wait", "--wait-timeout", "100")
@@ -172,6 +213,7 @@ def main():
                   "settings_credentials_notes_position_persist_after_recreate": True,
                   "backup_empty_volume_restore_and_busy_overwrite_rejection": True,
                   "write_auth_and_origin_rejection": True, "secrets_not_in_public_response": True,
+                  "full_pdf_runtime_and_checkpoint_reuse": full_pdf_verified,
                   "model_calls": 0, "image_target": env.get("DLOS_IMAGE_TARGET", "full"),
                   "limitations": "No real model response, native desktop, or full PDF parsing quality tested here."}
         (folder / "docker-smoke.json").write_text(json.dumps(report, indent=2) + "\n")
