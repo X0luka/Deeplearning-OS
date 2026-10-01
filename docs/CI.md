@@ -73,3 +73,6 @@ GitHub报告部分固定Action仍声明Node20运行时、目前由托管平台�
 软件源曾在Chromium依赖阶段卡住，最终候选为该步骤设置10分钟总上限，并仅在一次性GitHub托管VM设置APT单连接30秒/2次重试。下载失败会明确失败，不跳过浏览器回归；不修改维护者本机APT或网络配置。
 
 运行[36898011338](https://github.com/X0luka/Deeplearning-OS/actions/runs/36898011338)对应PR #11最终提交56ad1ec，Linux（567项后端及37项前端）、Windows、core Docker全部成功，随后按该提交合并。网络异常回归覆盖连接失败、读取超时和上游502，统一503且保留已有版本。
+
+
+运行[36916442191](https://github.com/X0luka/Deeplearning-OS/actions/runs/36916442191)对应PR #13的96a92c8：579项后端（240＋171＋168）、Linux前端回归、Windows构建及core Docker全部成功。新增12项历史引用迁移回归；此CI不调用真实模型。后续提示文案/验收记录提交须以自身CI为准。
