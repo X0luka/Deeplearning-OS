@@ -25,6 +25,8 @@ def parse_args(argv):
                         help="all, none, or comma-separated local extension names")
     parser.add_argument("--data-dir", type=Path, default=Path(os.getenv("AOS_DATA_DIR", "var")))
     parser.add_argument("--port", type=int, default=7777)
+    parser.add_argument("--listen-host", choices=["127.0.0.1", "0.0.0.0"], default="127.0.0.1",
+                        help="Keep loopback for local use; 0.0.0.0 is for explicitly published containers")
     parser.add_argument("--allow-query", action="store_true")
     parser.add_argument("--once", action="store_true")
     parser.add_argument("--unified-assistant", action="store_true", help="Opt in after isolated acceptance")
@@ -100,7 +102,7 @@ def main():
     args, providers = parse_args(argv)
     app, archive, services, entries = assemble(args, providers, argv[1:])
     if args.command == "serve":
-        uvicorn.run(app, host="127.0.0.1", port=args.port)
+        uvicorn.run(app, host=args.listen_host, port=args.port)
     else:
         async def work():
             try:

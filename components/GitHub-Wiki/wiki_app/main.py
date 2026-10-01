@@ -693,8 +693,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=8601)
     parser.add_argument("--data-dir", default=os.getenv("WIKI_DATA_DIR", "var"))
+    parser.add_argument("--host", choices=["127.0.0.1", "0.0.0.0"], default="127.0.0.1")
     args = parser.parse_args()
-    uvicorn.run(create_app(args.data_dir), host="127.0.0.1", port=args.port)
+    uvicorn.run(create_app(args.data_dir), host=args.host, port=args.port)
 
 
 if __name__ == "__main__":

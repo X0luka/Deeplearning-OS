@@ -428,13 +428,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=8602)
     parser.add_argument("--data-dir", type=Path, default=Path("var/reader"))
+    parser.add_argument("--host", choices=["127.0.0.1", "0.0.0.0"], default="127.0.0.1")
     args = parser.parse_args()
     provider_file = args.data_dir / "provider.json"
     if provider_file.exists():
         proxy = json.loads(provider_file.read_text()).get("proxy")
         if proxy and not os.getenv("PAPER_MODEL_PROXY"):
             os.environ["PAPER_MODEL_PROXY"] = proxy
-    uvicorn.run(create_app(args.data_dir), host="127.0.0.1", port=args.port)
+    uvicorn.run(create_app(args.data_dir), host=args.host, port=args.port)
 
 
 if __name__ == "__main__":

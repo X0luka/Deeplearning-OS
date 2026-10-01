@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      full_pdf:
+        description: 'Also build the complete CPU PDF/OCR image'
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -97,3 +102,30 @@ jobs:
           name: windows-build-manifest
           retention-days: 3
           path: dist/desktop-ci/build-manifest.json
+
+  docker:
+    name: Docker build and persistent-data lifecycle
+    needs: windows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      DLOS_IMAGE_TARGET: ${{ inputs.full_pdf && 'full' || 'core' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Validate Compose and build isolated image
+        run: |
+          docker compose --env-file /dev/null config --quiet
+          docker compose --env-file /dev/null build
+      - name: Exercise real container HTTP and recreate with saved volume
+        run: python3 scripts/docker_smoke.py --project "dlos-ci-${{ github.run_id }}-${{ github.run_attempt }}"
+      - name: Retain synthetic lifecycle report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: docker-lifecycle
+          retention-days: 3
+          if-no-files-found: ignore
+          include-hidden-files: true
+          path: .local/preparation/docker-smoke.json

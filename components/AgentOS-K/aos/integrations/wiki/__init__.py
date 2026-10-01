@@ -28,7 +28,7 @@ def create(args):
     directory = args.wiki_dir.resolve()
     service = Service("github_wiki",
                       (str(directory / ".venv/bin/python"), "-m", "wiki_app.main", "--port",
-                       str(urlsplit(url).port or 80), "--data-dir", str(args.wiki_data_dir.resolve() if args.wiki_data_dir is not None else directory / "var")),
+                       str(urlsplit(url).port or 80), "--host", getattr(args, "listen_host", "127.0.0.1"), "--data-dir", str(args.wiki_data_dir.resolve() if args.wiki_data_dir is not None else directory / "var")),
                       directory, url.rstrip('/') + "/aos/v1/describe", "api", product_id=product.id)
     client = httpx.AsyncClient(base_url=url, timeout=10, trust_env=False)
     return Integration(product, client, WikiHttpAdapter(client), [service],

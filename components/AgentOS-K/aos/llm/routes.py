@@ -118,9 +118,10 @@ def install(app, store, tasks, templates, check_write, products):
     @app.get('/internal/llm/v1/{product}/network')
     async def product_network(product: str, request: Request):
         product_auth(product, request)
-        if product not in {'paper', 'wiki'}:
+        channel = {'paper': 'paper', 'github-wiki': 'wiki', 'wiki': 'wiki'}.get(product)
+        if channel is None:
             raise HTTPException(404, 'unknown_network_channel')
-        return store.network()['effective'][product]
+        return store.network()['effective'][channel]
 
     @app.get('/internal/llm/v1/{product}/catalog')
     async def catalog(product: str, request: Request):

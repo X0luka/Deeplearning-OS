@@ -23,7 +23,7 @@ def create(args):
     directory = args.paper_dir.resolve()
     product = Product("paper", "PaperReader · 论文阅读", url, url, navigation_label="Reader", navigation_icon="paper")
     service = Service("paper_reader", (str(directory / ".venv/bin/python"), "-m",
-                      "paper_reader.web", "--port", str(urlsplit(url).port or 80),
+                      "paper_reader.web", "--port", str(urlsplit(url).port or 80), "--host", getattr(args, "listen_host", "127.0.0.1"),
                       "--data-dir", str(args.paper_data_dir.resolve() if args.paper_data_dir is not None else directory / "var/reader")), directory,
                       url.rstrip("/") + "/aos/v1/describe", "api", product_id=product.id)
     client = httpx.AsyncClient(base_url=url, timeout=10, trust_env=False)
