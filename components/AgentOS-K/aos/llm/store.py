@@ -41,7 +41,7 @@ def proxy_address(value):
     return value.rstrip('/')
 
 
-DEFAULTS = {'selection': None, 'custom': '', 'max_output_tokens': 16384,
+DEFAULTS = {'selection': None, 'custom': '', 'max_output_tokens': 32768,
             'thinking': 'default', 'temperature': None, 'tools': False,
             'web_search': False, 'document_input': 'text'}
 

@@ -43,3 +43,33 @@ Windows 作业不会运行桌面、安装 Runtime、创建快捷方式或测试 
 ## Docker 增量检查与私有仓库限制
 Docker作业接在Windows之后串行构建和运行真实HTTP/容器重建验收；默认core用于快速回归，手动full_pdf参数选择完整CPU增强PDF镜像，普通用户Compose默认full。Docker最长45分钟，仍不是账户费用上限。
 2026-10-01分支保护API返回403，说明当前私有仓库套餐不提供此功能。CI已可运行，但当前没有服务器强制合并门槛；维护流程必须检查最新提交后再合并。未升级套餐、未公开仓库。
+
+## 已完成的云端运行
+
+| 提交 / 运行 | 已验证范围 |
+|---|---|
+| 9f73e73 / [36881075254](https://github.com/X0luka/Deeplearning-OS/actions/runs/36881075254) | Linux干净安装/回归、Windows构建、core镜像真实HTTP、删除容器后重建仍保留数据 |
+| c285df5 / [36882427952](https://github.com/X0luka/Deeplearning-OS/actions/runs/36882427952) | full PDF/OCR镜像构建、三服务启动、HTTP及卷重建 |
+| 785328f / [36883350147](https://github.com/X0luka/Deeplearning-OS/actions/runs/36883350147) | 运行中拒绝备份、停止后完整备份、拒绝覆盖已有实例、空卷恢复后的实际数据核对 |
+| 009f633 / [36885168385](https://github.com/X0luka/Deeplearning-OS/actions/runs/36885168385) | full镜像内实际增强解析一页合成PDF、4GiB容器限额、完成页hash/mtime复用，以及备份恢复 |
+| b5b8379 / [36885398248](https://github.com/X0luka/Deeplearning-OS/actions/runs/36885398248) | 新实例质量额度、已有配置保持，连同Linux/Windows/core生命周期全部通过 |
+| f59bb1a / [36886208656](https://github.com/X0luka/Deeplearning-OS/actions/runs/36886208656) | Reader菜单后台刷新时序修复及确定性浏览器回归，连同完整常规CI通过 |
+
+初次009f633的PR运行36885168417曾在既有Reader菜单交互失败；保留失败记录，并通过独立修复解决，没有删除测试。该提交的完整镜像专项运行成功不是对这次失败的抹除。集成提交另行检查。
+
+GitHub账户已确认费用保护。实际读取的Actions默认权限为read，工作流不能批准PR。私有阶段的外部fork审批接口不适用（422）；公开时重新核对，不把此结果当成已配置外部贡献审批。
+
+这些是持续集成与验收，不会部署到用户电脑、发布镜像或自动公开仓库。没有启用定时后台监控；更新PR会自动触发工作流。
+
+
+### 2026-10-02 追加验证
+
+- [36888291642](https://github.com/X0luka/Deeplearning-OS/actions/runs/36888291642) / `4a73cac`：首次在Ubuntu镜像下载停滞至35分钟超时，非产品断言失败；同提交第二次完整通过，PR #8随后合并。未删除测试或放宽业务规则。
+- [36891998785](https://github.com/X0luka/Deeplearning-OS/actions/runs/36891998785) / `c819cb4`：563项后端、37项前端、Windows构建及core Docker生命周期通过。
+- [36893385832](https://github.com/X0luka/Deeplearning-OS/actions/runs/36893385832) / `2afa15c`：Wiki修订结构恢复增量后的Linux、Windows与core Docker全部通过，PR #10随后合并；报告为228＋171＋165＝564项后端、37项前端；Reader保留2个既有依赖弃用提示。
+
+GitHub报告部分固定Action仍声明Node20运行时、目前由托管平台强制使用Node24；当前任务已成功，后续应单独审核Action升级，不能把平台兼容执行当成已完成依赖升级。此提示未改变本机Node或用户环境。
+
+软件源曾在Chromium依赖阶段卡住，最终候选为该步骤设置10分钟总上限，并仅在一次性GitHub托管VM设置APT单连接30秒/2次重试。下载失败会明确失败，不跳过浏览器回归；不修改维护者本机APT或网络配置。
+
+运行[36898011338](https://github.com/X0luka/Deeplearning-OS/actions/runs/36898011338)对应PR #11最终提交56ad1ec，Linux（567项后端及37项前端）、Windows、core Docker全部成功，随后按该提交合并。网络异常回归覆盖连接失败、读取超时和上游502，统一503且保留已有版本。
