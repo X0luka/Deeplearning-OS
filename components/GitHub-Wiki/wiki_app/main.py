@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
 
+import httpx
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, Response, StreamingResponse
@@ -267,6 +268,11 @@ def create_app(root=None, engine_factory=Engine):
             latest = await check_update(repo["url"], repo["ref"], proxy=source_proxy(store))
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from None
+        except httpx.HTTPError:
+            from .rules import failure
+            return JSONResponse({"detail": "github_unavailable",
+                                 "failure": failure("github_unavailable", stage="update_check")},
+                                status_code=503)
         current_version = store.version(repo["current"]) if repo["current"] else None
         return {
             **latest,
