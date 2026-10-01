@@ -1124,7 +1124,7 @@ title不超过20汉字，responsibility不超过100字符，boundary不超过180
             # An unsupported claim may need different implementation evidence,
             # not another rewrite based on the same README-oriented seed.
             terms = list(dict.fromkeys(re.findall(r"[A-Za-z_][A-Za-z0-9_./-]{2,}",
-                                                   " ".join(audit["issues"]))))
+                                                   json.dumps(audit["issues"], ensure_ascii=False))))
             extra = retrieve(evidence, {"queries": terms, "paths": []}, graph)
             keys = list(extra) + [k for unit in [value["summary"], value["boundary"]]
                                    + value["nodes"] + value["relations"] for k in unit["evidence"]]

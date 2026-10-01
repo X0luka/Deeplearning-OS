@@ -359,3 +359,38 @@ async def test_operations_revision_keeps_instructions_out_of_runtime_flow(tmp_pa
     assert not result["partial"]
     assert audits == 2
     assert knowledge.load(store, version)["operations"]["steps"] == []
+
+
+async def test_structured_audit_issues_reach_source_revision(tmp_path, monkeypatch):
+    store, version = await prepared(tmp_path)
+    base = fake_model()
+    issue = {"type": "boundary", "detail": "Check src/a.py implementation ownership"}
+    revisions = []
+    queries = []
+    retrieve = knowledge.retrieve
+
+    def capture(evidence, request, graph):
+        queries.extend(request["queries"])
+        return retrieve(evidence, request, graph)
+
+    monkeypatch.setattr(knowledge, "retrieve", capture)
+
+    async def model(settings, task, payload):
+        if "approved" in task:
+            return {"approved": False, "issues": [issue]} if not revisions else {"approved": True, "issues": []}
+        if "依据补读实现修正" in task:
+            revisions.append(payload)
+            return payload["model"]
+        return await base(settings, task, payload)
+
+    result = await knowledge.build(store, version, model=model)
+    value = knowledge.load(store, version)
+    assert not result["partial"]
+    assert value["audit"]["approved"]
+    assert revisions and all(item == issue for item in revisions[0]["issues"])
+    assert "src/a.py" in queries
+
+    async def no_more_calls(*args):
+        raise AssertionError("Completed knowledge should be reused")
+
+    assert (await knowledge.build(store, version, model=no_more_calls))["cached"]
