@@ -1,0 +1,34 @@
+name: deeplearning-os
+services:
+  app:
+    build:
+      context: .
+      target: ${DLOS_IMAGE_TARGET:-full}
+    image: deeplearning-os:local
+    platform: linux/amd64
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 512
+    mem_limit: 4g
+    cpus: 2.0
+    stop_grace_period: 90s
+    environment:
+      DLOS_HOST_PORT: ${DLOS_HOST_PORT:-18877}
+      DLOS_WIKI_PORT: ${DLOS_WIKI_PORT:-18878}
+      DLOS_PAPER_PORT: ${DLOS_PAPER_PORT:-18879}
+    ports:
+      - "127.0.0.1:${DLOS_HOST_PORT:-18877}:${DLOS_HOST_PORT:-18877}"
+      - "127.0.0.1:${DLOS_WIKI_PORT:-18878}:${DLOS_WIKI_PORT:-18878}"
+      - "127.0.0.1:${DLOS_PAPER_PORT:-18879}:${DLOS_PAPER_PORT:-18879}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - data:/opt/dlos/.local/instances
+      - locks:/opt/dlos/.local/instance-locks
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+volumes:
+  data:
+  locks:

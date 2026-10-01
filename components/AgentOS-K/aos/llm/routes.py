@@ -7,7 +7,7 @@ from .catalog import discover, model_item
 from .store import validate_settings
 
 
-def install(app, store, tasks, templates, check_write, products):
+def install(app, store, tasks, templates, check_write, products, network_channels=None):
     app.state.models = store
     setting_tasks = {**tasks, 'assistant': {'chat': '对话'}}
 
@@ -118,9 +118,11 @@ def install(app, store, tasks, templates, check_write, products):
     @app.get('/internal/llm/v1/{product}/network')
     async def product_network(product: str, request: Request):
         product_auth(product, request)
-        if product not in {'paper', 'wiki'}:
+        channel = (network_channels or {}).get(product, product)
+        effective = store.network()['effective']
+        if channel not in effective:
             raise HTTPException(404, 'unknown_network_channel')
-        return store.network()['effective'][product]
+        return effective[channel]
 
     @app.get('/internal/llm/v1/{product}/catalog')
     async def catalog(product: str, request: Request):

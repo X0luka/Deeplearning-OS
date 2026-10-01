@@ -48,3 +48,29 @@ async def test_network_routes_auth_and_product_channel_scope(tmp_path):
         assert result.json() == {"proxy": "http://127.0.0.1:7897", "source": "default"}
         assert (await c.get("/internal/llm/v1/wiki/network", headers=auth)).status_code == 403
         assert set(result.json()) == {"proxy", "source"}
+
+
+async def test_real_wiki_product_identity_receives_only_its_network_channel(tmp_path):
+    from aos.bootstrap import assemble, parse_args
+
+    args, providers = parse_args(["serve", "--products", "wiki,paper",
+                                  "--data-dir", str(tmp_path / "workbench")])
+    app, _, _, entries = assemble(args, providers)
+    store = app.state.models
+    settings = defaults()
+    settings["wiki"] = {"mode": "proxy", "proxy": "http://127.0.0.1:17898"}
+    settings["paper"] = {"mode": "direct", "proxy": ""}
+    store.save_network(settings)
+    wiki = next(entry for entry in entries if entry.product.id == "github-wiki")
+    environment = wiki.services[0].env
+    assert environment["AOS_LLM_PRODUCT"] == "github-wiki"
+    try:
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url="http://testserver") as client:
+            headers = {"Authorization": "Bearer " + environment["AOS_LLM_TOKEN"]}
+            result = await client.get("/internal/llm/v1/github-wiki/network", headers=headers)
+            assert result.status_code == 200
+            assert result.json() == {"proxy": "http://127.0.0.1:17898", "source": "wiki"}
+            assert (await client.get("/internal/llm/v1/paper/network", headers=headers)).status_code == 403
+    finally:
+        for entry in entries:
+            await entry.client.aclose()

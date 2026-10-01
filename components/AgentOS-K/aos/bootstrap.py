@@ -25,6 +25,8 @@ def parse_args(argv):
                         help="all, none, or comma-separated local extension names")
     parser.add_argument("--data-dir", type=Path, default=Path(os.getenv("AOS_DATA_DIR", "var")))
     parser.add_argument("--port", type=int, default=7777)
+    parser.add_argument("--listen-host", choices=["127.0.0.1", "0.0.0.0"], default="127.0.0.1",
+                        help="Keep loopback for local use; 0.0.0.0 is for explicitly published containers")
     parser.add_argument("--allow-query", action="store_true")
     parser.add_argument("--once", action="store_true")
     parser.add_argument("--unified-assistant", action="store_true", help="Opt in after isolated acceptance")
@@ -88,6 +90,7 @@ def assemble(args, providers, options=(), session_ledger=None):
                      startup_errors={e.product.id: e.startup_errors for e in entries},
                      sync_services=services,
                      clients=[e.client for e in entries], model_store=model_store, model_tasks=model_tasks,
+                     network_channels={e.product.id: e.network_channel for e in entries if e.network_channel},
                      assistant_providers={e.product.id:{"url":e.product.api_url.rstrip("/"),"name":e.product.name,"section":e.assistant_section,"runtime":registry[e.product.id][2]} for e in entries if e.assistant_section})
     app.state.worker_command = worker.command if entries else ()
     app.state.desktop = session_ledger is not None
@@ -100,7 +103,7 @@ def main():
     args, providers = parse_args(argv)
     app, archive, services, entries = assemble(args, providers, argv[1:])
     if args.command == "serve":
-        uvicorn.run(app, host="127.0.0.1", port=args.port)
+        uvicorn.run(app, host=args.listen_host, port=args.port)
     else:
         async def work():
             try:
