@@ -56,3 +56,33 @@ test('file menu pins persistently, trashes/restores current files, retains histo
   await page.locator('#library-trash').click();await expect(rows).toHaveCount(2);assert.deepEqual(errors,[]);
  }finally{await browser.close();fixture.kill('SIGTERM');}
 });
+
+// A delayed /api/state refresh must not dismiss an action the user just opened.
+test('file menu survives background data refresh and closes when its file disappears', {timeout:30000}, async()=>{
+ const fixture=spawn('.venv/bin/python',['-u','tests/library_fixture.py'],{stdio:['ignore','pipe','pipe']});let log='';fixture.stderr.on('data',v=>log+=v);
+ const url=await new Promise((resolve,reject)=>{fixture.stdout.on('data',v=>{const m=String(v).match(/FIXTURE=(http:\/\/[^\s]+)/);if(m)resolve(m[1]);});fixture.once('exit',()=>reject(new Error(log)));});
+ const browser=await chromium.launch({headless:true});
+ try{
+  const page=await browser.newPage();
+  for(let i=0;;i++){try{await page.goto(url);break;}catch(e){if(i>20)throw e;await new Promise(r=>setTimeout(r,100));}}
+  const result=await page.evaluate(async()=>{
+   const {createLibrary}=await import('/static/library.mjs');
+   // The real browsing document supplies popover, focus and layout behavior.
+   const container=document.createElement('section');document.body.append(container);
+   let action=null;
+   const ui=createLibrary({container,onOpen(){},onAction:async(kind,item)=>{action={kind,pinned:item.pinned};}});
+   const item={document:'fixture-menu-refresh',title:'Refresh.pdf',pinned:false,page:1,updated:'2026-10-01',session:'s',sessions:[]};
+   ui.update({items:[item],trash:[]},null);
+   container.querySelector('.file-more').click();
+   const menu=[...document.querySelectorAll('.file-menu')].at(-1);
+   ui.update({items:[{...item,pinned:true}],trash:[]},item.document);
+   const visible=menu.matches(':popover-open');
+   const freshAction=[...menu.querySelectorAll('button')].find(b=>b.textContent==='取消置顶');
+   freshAction?.click();await new Promise(resolve=>setTimeout(resolve,0));
+   container.querySelector('.file-more').click();
+   ui.update({items:[],trash:[]},null);
+   return {visible,action,removedClosed:!menu.matches(':popover-open')};
+  });
+  assert.deepEqual(result,{visible:true,action:{kind:'unpin',pinned:true},removedClosed:true});
+ }finally{await browser.close();fixture.kill('SIGTERM');}
+});
