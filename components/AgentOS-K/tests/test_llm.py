@@ -131,7 +131,7 @@ def test_discovered_limits_and_unknown_are_not_guessed():
 def test_new_quality_budget_preserves_saved_user_choices(tmp_path):
     directory = tmp_path / 'llm'
     store = ModelStore(directory)
-    assert store.read()['defaults']['max_output_tokens'] == 16384
+    assert store.read()['defaults']['max_output_tokens'] == 32768
     # A saved older budget, including task overrides, is a deliberate user choice.
     store.settings('global', {'max_output_tokens': 3000, 'thinking': 'off'})
     store.settings('paper:reading', {'max_output_tokens': 8192})
