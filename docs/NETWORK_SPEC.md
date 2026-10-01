@@ -87,4 +87,4 @@ Docker拉取基础镜像、构建时下载依赖、产品运行时访问论文/G
 
 ## 本轮真实异常验证（2026-10-02）
 仅在独立测试实例把模型/Wiki通道临时指向关闭端口，原网络设置完整保留并恢复。Wiki更新检查返回503与INGEST.NETWORK，模型界面显示中文连接/代理错误，已有PDF仍可读且hash一致。恢复后GitHub更新检查200，四次真实问题完成。无效XSRF写入被403拒绝；未配置Gemini不影响这条DeepSeek路径。
-本机Docker Desktop目前因自身dockerInference端点故障在启动阶段退出，尚不能验证容器访问宿主代理。此故障不是已证实的产品网络问题，不通过修改Clash/LAN或重启WSL绕过。
+用户随后重新打开Docker Desktop，引擎正常。本机容器不配置显式应用代理即可取得GitHub/arXiv的200和DeepSeek无密钥探测的401；宿主原有TUN/路由仍在使用，不能称为无透明代理的纯直连验收。未修改Clash/LAN或重启WSL。

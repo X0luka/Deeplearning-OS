@@ -326,3 +326,6 @@ CI基础PR #2已合入，运行36875451190的Linux干净安装/550项后台/前�
 本机Docker Desktop首次启动在产品加载前因自身dockerInference通信端点错误退出。未重置、删除卷、修改代理或重启WSL；宿主有限修复等待单独授权，I-13。最新候选CI继续执行。
 
 用户随后授权仅重命名dockerInference并重启Docker。确认Docker进程不存在、校验目标位于Docker/run后，Rename-Item被Windows以“系统无法访问此文件”拒绝，未启动后续重启步骤；按授权边界停止宿主修复。未删除、重置、重装或重启WSL。
+
+## 2026-10-02 本机Docker完整镜像验收
+用户重新打开Docker Desktop后引擎恢复，无进一步宿主修复。本机full构建、实际增强PDF/检查点、合成数据重建/新项目备份恢复和公开站点连通性通过。公开无密钥资料恢复暴露历史引用仍指向旧端口，新增只读呈现层地址重定位，42项离线回归及实际浏览器复测通过。原数据/提示词不重写，现有rag_memory容器不操作。真实DeepSeek双向问答正在补测，详见LOCAL_DOCKER_ACCEPTANCE.md。

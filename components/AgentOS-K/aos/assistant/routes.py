@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 
 from aos.llm.store import validate_settings
 
+from .links import present_turn
 from .service import Service
 from .store import Store, now
 
@@ -125,7 +126,7 @@ def install(app, models, providers, archive, check_write, token):
 
     @app.get(prefix + "/conversations/{identity}")
     def read(identity: str):
-        return {"conversation": store.conversation(identity), "turns": store.turns(identity)}
+        return {"conversation": store.conversation(identity), "turns": [present_turn(t, providers) for t in store.turns(identity)]}
 
     @app.delete(prefix + "/conversations/{identity}")
     def delete_conversation(identity: str, request: Request):
@@ -216,7 +217,7 @@ def install(app, models, providers, archive, check_write, token):
         if old:
             if old[0]["conversation"] != identity or old[0]["question"] != question:
                 raise HTTPException(409, "request_key_reused")
-            return store.turn(old[0]["id"])
+            return present_turn(store.turn(old[0]["id"]), providers)
         resolved = models.resolve(c["model_scope"], "chat", c["settings"], True)
         if resolved.get("document_input") == "pdf":
             raise HTTPException(409, "unified_raw_pdf_not_supported")
@@ -263,11 +264,11 @@ def install(app, models, providers, archive, check_write, token):
         turn, fresh = store.enqueue(identity, key, question, snapshot)
         if fresh:
             service.start(turn)
-        return store.turn(turn)
+        return present_turn(store.turn(turn), providers)
 
     @app.get(prefix + "/turns/{identity}")
     def turn(identity: str):
-        return store.turn(identity)
+        return present_turn(store.turn(identity), providers)
 
     @app.post(prefix + "/turns/{identity}/cancel")
     async def cancel(identity: str, request: Request):
@@ -286,7 +287,7 @@ def install(app, models, providers, archive, check_write, token):
             previous = ""
             while not await request.is_disconnected():
                 turn = store.turn(identity)
-                encoded = json.dumps(turn, ensure_ascii=False)
+                encoded = json.dumps(present_turn(turn, providers), ensure_ascii=False)
                 if encoded != previous:
                     yield "data: " + encoded + "\n\n"
                     previous = encoded
