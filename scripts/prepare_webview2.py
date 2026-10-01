@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 from urllib.parse import urlsplit
@@ -18,7 +19,13 @@ archive.parent.mkdir(parents=True, exist_ok=True)
 if not archive.exists() or hashlib.sha256(archive.read_bytes()).hexdigest() != info["sha256"]:
     if args.offline:
         raise SystemExit("Verified SDK archive is unavailable in the private cache")
-    command = ["curl", "-q", "--fail", "--location", "--silent", "--show-error",
+    download_env = {"PATH": "/usr/bin:/bin"}
+    curl = "curl"
+    if os.name == "nt":
+        system_root = os.environ["SystemRoot"]
+        download_env = {"SystemRoot": system_root, "PATH": str(Path(system_root) / "System32")}
+        curl = str(Path(system_root) / "System32/curl.exe")
+    command = [curl, "-q", "--fail", "--location", "--silent", "--show-error",
                "--proto", "=https", "--max-time", "120", "--retry", "1"]
     if args.proxy:
         proxy = urlsplit(args.proxy)
@@ -27,7 +34,7 @@ if not archive.exists() or hashlib.sha256(archive.read_bytes()).hexdigest() != i
         command += ["--proxy", args.proxy]
     partial = archive.with_suffix(".partial")
     subprocess.run([*command, "--output", str(partial), info["url"]],
-                   env={"PATH": "/usr/bin:/bin"}, check=True, timeout=250)
+                   env=download_env, check=True, timeout=250)
     if hashlib.sha256(partial.read_bytes()).hexdigest() != info["sha256"]:
         raise SystemExit("SDK checksum mismatch; refusing extraction")
     partial.replace(archive)
@@ -52,6 +59,7 @@ manifest = {"package": "Microsoft.Web.WebView2", **info, "architecture": "win-x6
             "files": files, "source": "Official NuGet HTTPS package, pinned after initial retrieval",
             "runtime_installed": False}
 (destination / "sdk-files.json").write_text(json.dumps(manifest, indent=2) + "\n")
+(root / ".local/preparation").mkdir(parents=True, exist_ok=True)
 (root / ".local/preparation/webview2-sdk.json").write_text(json.dumps(manifest, indent=2) + "\n")
 print(json.dumps({"sdk": str(destination), "version": info["version"],
                   "archive_sha256_verified": True, "runtime_installed": False}))
