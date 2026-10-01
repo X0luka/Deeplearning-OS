@@ -36,10 +36,10 @@ jobs:
         run: python3 scripts/prepare_dependencies.py --uv "$(command -v uv)"
       - name: Secret patterns and dependency declarations
         run: python3 scripts/audit_preparation.py --check
-      - name: Backend regressions (serial, no network or provider secrets)
-        run: bash scripts/run-isolated.sh python3 scripts/test_components.py ci
       - name: Install pinned Node
         run: python3 scripts/install_node.py
+      - name: Backend regressions (serial, no network or provider secrets)
+        run: bash scripts/run-isolated.sh python3 scripts/test_components.py ci
       - name: Build and type-check frontends
         run: python3 scripts/prepare_frontend.py
       - name: Prepare Chromium dependencies on disposable hosted VM
