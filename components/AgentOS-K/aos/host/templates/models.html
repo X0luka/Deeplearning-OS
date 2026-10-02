@@ -9,7 +9,7 @@
 <p id="network-status" role="status" aria-live="polite">正在读取网络设置…</p>
 <p class="muted">模型连接中已填写的代理优先于这里的“模型 API”。“不使用应用代理”仍可能经过系统的 TUN 或网关；本机服务通信始终不使用外部代理。新网络配置用于后续请求，已发出的请求不会自动重发。</p>
 </section>
-<section class="card"><h2>API 连接</h2><p id="connection-empty" hidden>请先输入 API。连接名称由您自定义，系统不会根据名称限定厂商或模型。</p><div id="connections"></div>
+<section class="card"><h2>API 连接</h2><p id="connection-empty" hidden>请先输入 API。连接名称由您自定义，系统不会根据名称限定厂商或模型。</p><div id="connections"></div><p id="connection-notice" role="status" aria-live="polite" aria-atomic="true"></p>
 <details id="connection-editor"><summary>添加 API / 编辑连接</summary>
 <form id="connection-form" class="llm-form">
 <input name="id" type="hidden"><label>连接名称<input name="name" required maxlength="100" placeholder="自己起一个名称"></label>
