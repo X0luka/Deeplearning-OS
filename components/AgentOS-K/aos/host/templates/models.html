@@ -1,24 +1,25 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="top"><div><div class="eyebrow">SETTINGS</div><h1>API 与模型</h1><p class="muted">添加一个 API 连接，Reader、Wiki 与统一助手共同使用。保存和获取模型不会发起生成。</p></div></div>
+<div class="top"><div><div class="eyebrow">SETTINGS</div><h1>API 与模型</h1><p class="muted">填写 API 地址和密钥，读取模型列表并选择模型后保存。读取目录不发起模型生成。</p></div></div>
 <p id="model-notice" role="status" aria-live="polite"></p>
 <p id="gemini-feature-note" class="muted"><strong>Gemini 为可选连接。</strong>当前版本的原生联网搜索、向模型发送原始 PDF（Reader）需要可用的 Gemini 原生 API，且所选模型须支持对应能力。未配置时，请关闭“原生联网”，文档输入选择“提取文本”；已配置 DeepSeek 等兼容模型的文字问答、文本阅读与翻译仍可使用，本地 PDF 浏览和笔记不受影响。</p>
-<section class="card"><h2>网络设置</h2>
+
+<section class="card"><h2>API 连接</h2><p id="connection-empty" hidden>请先输入 API。连接名称由您自定义，系统不会根据名称限定厂商或模型。</p><div id="connections"></div><p id="connection-notice" role="status" aria-live="polite" aria-atomic="true"></p>
+<details id="connection-editor"><summary>添加 API / 编辑连接</summary>
+<form id="connection-form" class="llm-form">
+<input name="id" type="hidden"><label>连接名称<input name="name" maxlength="100" placeholder="可选，默认使用服务商域名"></label>
+<label>API Base URL<input name="base_url" type="url" placeholder="https://api.example.com/v1" required aria-describedby="base-url-help"></label><p id="base-url-help" class="muted">填写服务商提供的接口根地址，常见格式为 https://域名/v1，例如 https://api.openai.com/v1；DeepSeek 官方可用 https://api.deepseek.com。兼容 OpenAI 不代表域名相同，也不保证必须带 /v1。不要填写完整的 /chat/completions 地址；软件会在根地址后添加 /models 来读取模型列表。</p>
+<label>API Key<input name="key" type="password" autocomplete="new-password" placeholder="输入 API Key" aria-describedby="key-help"></label>
+<p id="key-help" class="muted">已有密钥只显示遮罩，不回显原文；编辑时删空并保存会清除密钥，取消编辑不会改变已保存配置。</p><label>选择模型<select id="connection-model"><option value="">填写地址和密钥后读取模型</option></select></label><p id="connection-catalog-status" role="status" aria-live="polite"></p><details><summary>无法读取目录？手动填写模型 ID</summary><label>准确模型 ID<input id="connection-manual-model" maxlength="250" placeholder="仅在服务商不提供目录时填写"></label><button type="button" id="connection-refresh">重新读取模型列表</button></details><details id="connection-advanced"><summary>高级连接设置</summary><label>接口格式<select name="protocol"><option value="chat">Chat Completions 兼容（默认）</option><option value="gemini">Gemini 原生</option></select></label><label>代理（可选）<input name="proxy" type="url" placeholder="http://127.0.0.1:7897"></label>
+<label><input name="enabled" type="checkbox" checked> 允许此连接用于新请求（仍需有效密钥）</label><label><input id="connection-default" type="checkbox"> 作为全局默认模型</label></details>
+<div class="row"><button id="connection-save">保存设置</button><button type="button" id="new-connection">清空表单</button></div></form></details></section>
+<details class="card"><summary>高级网络设置</summary>
 <p class="muted">分别设置模型 API、论文下载和 GitHub 获取的网络路径。这里只影响本实例，不修改系统代理或网关；保存不会发起联网测试。</p>
 <form id="network-form" class="llm-form"><fieldset id="network-fields" disabled style="border:0;padding:0"><div id="network-channels" class="llm-form"></div><button type="submit">保存网络设置</button></fieldset></form>
 <p id="network-status" role="status" aria-live="polite">正在读取网络设置…</p>
 <p class="muted">模型连接中已填写的代理优先于这里的“模型 API”。“不使用应用代理”仍可能经过系统的 TUN 或网关；本机服务通信始终不使用外部代理。新网络配置用于后续请求，已发出的请求不会自动重发。</p>
-</section>
-<section class="card"><h2>API 连接</h2><p id="connection-empty" hidden>请先输入 API。连接名称由您自定义，系统不会根据名称限定厂商或模型。</p><div id="connections"></div><p id="connection-notice" role="status" aria-live="polite" aria-atomic="true"></p>
-<details id="connection-editor"><summary>添加 API / 编辑连接</summary>
-<form id="connection-form" class="llm-form">
-<input name="id" type="hidden"><label>连接名称<input name="name" required maxlength="100" placeholder="自己起一个名称"></label>
-<label>API Base URL<input name="base_url" type="url" placeholder="https://provider.example/v1" required></label>
-<label>API Key<input name="key" type="password" autocomplete="new-password" placeholder="新连接请输入 API Key；编辑时留空保留"></label>
-<details id="connection-advanced"><summary>高级连接设置</summary><label>接口格式<select name="protocol"><option value="chat">Chat Completions 兼容（默认）</option><option value="gemini">Gemini 原生</option></select></label><label>代理（可选）<input name="proxy" type="url" placeholder="http://127.0.0.1:7897"></label>
-<label><input name="enabled" type="checkbox" checked> 启用连接</label></details>
-<div class="row"><button>保存连接</button><button type="button" id="new-connection">清空表单</button></div></form></details></section>
-<section class="card"><h2>默认模型与回答设置</h2><p class="muted">全局 Custom 只设置一次。引用规则和 Wiki 的结构化输出要求由产品保留。</p>
+</details>
+<details class="card"><summary>高级：默认模型、回答参数与各模块设置</summary><p class="muted">全局 Custom 只设置一次。引用规则和 Wiki 的结构化输出要求由产品保留。</p>
 <form id="settings-form" class="llm-form">
 <label>设置范围<select id="scope"></select></label>
 <label>搜索模型<input id="model-search" type="search" placeholder="输入模型或连接名称"></label>
@@ -34,11 +35,11 @@
 <label>温度<input id="temperature" type="number" min="0" max="2" step="0.1" placeholder="模型默认 / 继承"></label>
 <label>原生联网<select id="web_search" aria-describedby="gemini-feature-note"><option value="">继承</option><option value="false">关闭</option><option value="true">开启（要求已接入的原生搜索）</option></select></label>
 <label>文档输入<select id="document_input" aria-describedby="gemini-feature-note"><option value="">继承</option><option value="text">提取文本</option><option value="pdf">原始 PDF（Reader）</option></select></label>
-</details><div class="row"><button>保存设置</button><button type="button" id="inherit">恢复继承</button></div><p id="scope-status" class="muted"></p></form></section>
-<section class="card"><h2>模型目录</h2><p class="muted">目录可见不代表调用已验证。未知能力不会自动发起付费测试；可按服务商文档确认能力。</p><div id="catalog"></div>
+</details><div class="row"><button>保存设置</button><button type="button" id="inherit">恢复继承</button></div><p id="scope-status" class="muted"></p></form></details>
+<details class="card"><summary>高级模型目录与能力设置</summary><p class="muted">目录可见不代表调用已验证。未知能力不会自动发起付费测试；可按服务商文档确认能力。</p><div id="catalog"></div>
 <details><summary>手动添加模型 / 确认能力</summary><form id="manual-form" class="llm-form"><label>连接<select id="manual-connection"></select></label><label>准确模型 ID<input id="manual-id" required maxlength="250"></label>
-<div id="capabilities" class="llm-grid"></div><button>保存模型信息</button></form></details></section>
+<div id="capabilities" class="llm-grid"></div><button>保存模型信息</button></form></details></details>
 <style>.llm-form{display:grid;gap:16px;margin-top:18px;max-width:820px}.llm-form label{display:grid;gap:6px}.llm-form label:has(input[type=checkbox]){display:flex}.llm-form input:not([type=checkbox]),.llm-form select,.llm-form textarea{width:100%}.llm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.llm-item{border-bottom:1px solid var(--line);padding:14px 0;overflow-wrap:anywhere}.llm-item .row{margin-top:8px}#model-notice{position:sticky;top:8px;z-index:5;background:var(--surface);border-radius:8px;padding:10px}#catalog{max-height:340px;overflow:auto}@media(max-width:650px){.llm-grid{grid-template-columns:1fr}}</style>
 <script src="/static/network-settings.js?v=20260929"></script>
-<script src="/static/models.js?v=provider-notes-20260929"></script>
+<script src="/static/models.js?v=connection-editor-20261002"></script>
 {% endblock %}

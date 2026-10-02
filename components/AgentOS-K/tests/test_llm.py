@@ -31,8 +31,9 @@ def test_inheritance_snapshot_and_secrets(models):
     assert store.resolve('alpha','chat')['max_output_tokens']==4000
     assert snapshot['max_output_tokens']==6000
     assert (store.private/c).stat().st_mode & 0o777 == 0o600
-    with pytest.raises(ValueError,match='connection_in_use'):
-        store.delete_connection(c)
+    store.delete_connection(c)
+    assert store.read()['defaults']['selection'] is None
+    assert not store.public()['connections']
 
 
 def test_unknown_optional_capabilities_and_disabled_connection(models):
