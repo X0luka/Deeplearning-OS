@@ -100,6 +100,41 @@ async def discover(store, identity, transport=None):
     return store.mutate(save)
 
 
+async def preview_connection(store, value, transport=None):
+    """Query draft credentials without saving them or changing the current connection."""
+    from .store import address, proxy_address
+    protocol = value.get('protocol', 'chat')
+    if protocol not in {'chat', 'gemini'}:
+        raise ValueError('invalid_protocol')
+    base = address(value.get('base_url', ''))
+    proxy = value.get('proxy') or None
+    if proxy:
+        proxy = proxy_address(proxy)
+    key = value.get('key')
+    if key is None:
+        old = next((c for c in store.read()['connections'] if c['id'] == value.get('id')), None)
+        if not old:
+            raise ValueError('model_key_not_configured')
+        if old['base_url'] != base or old['protocol'] != protocol:
+            raise ValueError('key_required_for_new_endpoint')
+        key = store.secret(old.get('credential_ref', old['id']))
+    if not isinstance(key, str) or not key.strip() or len(key)>8192 or any(c in key for c in '\r\n'):
+        raise ValueError('model_key_not_configured')
+    connection = {'id':'draft', 'base_url':base, 'protocol':protocol, 'proxy':proxy,
+                  'models':[], 'error':None, 'refreshed_at':None}
+    class Draft:
+        def read(self): return {'connections':[connection]}
+        def secret(self, identity): return key
+        def effective_proxy(self, channel, connection_proxy):
+            return store.effective_proxy(channel, connection_proxy)
+        def mutate(self, operation):
+            state = self.read()
+            operation(state)
+            return state
+    result = await discover(Draft(), 'draft', transport)
+    return result['connections'][0]['models']
+
+
 def model_limits(connection, model):
     """Verified provider facts, scoped to the endpoint; never infer from a model name alone."""
     limits = dict(model.get('limits') or {})

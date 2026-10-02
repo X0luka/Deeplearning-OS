@@ -3,7 +3,7 @@ import secrets
 
 from fastapi import HTTPException, Request
 
-from .catalog import discover, model_item
+from .catalog import discover, model_item, preview_connection
 from .store import validate_settings
 
 
@@ -61,6 +61,31 @@ def install(app, store, tasks, templates, check_write, products, network_channel
     async def connection(request: Request):
         check_write(request)
         return store.save_connection(await body(request))
+
+    @app.post('/api/v1/llm/connections/preview')
+    async def preview(request: Request):
+        check_write(request)
+        return {'models': await preview_connection(store, await body(request))}
+
+    @app.post('/api/v1/llm/connections/configure')
+    async def configure(request: Request):
+        check_write(request)
+        value = await body(request)
+        manual = value.pop('manual_model', False)
+        if type(manual) is not bool:
+            raise ValueError('invalid_connection')
+        catalog = None
+        if not value.get('clear_key'):
+            if not value.get('selected_model'):
+                raise ValueError('model_not_configured')
+            if not manual:
+                draft = dict(value)
+                if not draft.get('key'):
+                    draft.pop('key', None)
+                catalog = await preview_connection(store, draft)
+                if not any(m['id'] == value['selected_model'] for m in catalog):
+                    raise ValueError('model_not_in_catalog')
+        return store.save_connection(value, catalog=catalog)
 
     @app.delete('/api/v1/llm/connections/{identity}')
     async def remove(identity: str, request: Request):

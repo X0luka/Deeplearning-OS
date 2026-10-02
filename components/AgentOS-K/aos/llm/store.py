@@ -149,10 +149,18 @@ class ModelStore:
                 model['limits'] = model_limits(c, model)
         return state
 
-    def save_connection(self, value):
-        allowed = {'id', 'name', 'protocol', 'base_url', 'key', 'enabled', 'proxy'}
+    def save_connection(self, value, catalog=None):
+        allowed = {'id', 'name', 'protocol', 'base_url', 'key', 'enabled', 'proxy', 'clear_key', 'selected_model', 'use_as_default'}
         if not isinstance(value, dict) or set(value)-allowed:
             raise ValueError('invalid_connection')
+        for flag in ('clear_key', 'use_as_default'):
+            if flag in value and type(value[flag]) is not bool:
+                raise ValueError('invalid_connection')
+        selected = value.get('selected_model')
+        if selected is not None and (not isinstance(selected, str) or len(selected)>250 or any(ord(c)<32 for c in selected)):
+            raise ValueError('invalid_model_id')
+        if value.get('clear_key') and value.get('key'):
+            raise ValueError('invalid_key')
         identity = value.get('id') or secrets.token_hex(12)
         self.secret(identity)
         if not isinstance(value.get('name'), str) or not 1 <= len(value['name']) <= 100:
@@ -172,7 +180,7 @@ class ModelStore:
             old = next((c for c in state['connections'] if c['id'] == identity), None)
             if value.get('id') and old is None:
                 raise ValueError('connection_not_found')
-            if old and old['base_url'] != base and not key:
+            if old and (old['base_url'] != base or old['protocol'] != value['protocol']) and not key and not value.get('clear_key'):
                 raise ValueError('key_required_for_new_endpoint')
             item = {'id': identity, 'name': value['name'], 'protocol': value['protocol'],
                     'base_url': base, 'proxy': proxy, 'enabled': bool(value.get('enabled', True)),
@@ -180,9 +188,28 @@ class ModelStore:
             if old and old['base_url'] == base and old['protocol'] == item['protocol']:
                 item.update({k: old[k] for k in ['models', 'refreshed_at', 'error']})
             item['credential_ref'] = old.get('credential_ref', identity) if old else identity
-            if key:
+            if key or value.get('clear_key'):
+                item['error'] = None
+                item['refreshed_at'] = None
                 item['credential_ref'] = identity+'-'+secrets.token_hex(8) if old else identity
                 self.write_secret(item['credential_ref'], key)
+            if catalog is not None:
+                overrides = {m['id']:m for m in item['models']
+                             if m.get('source') in {'manual', 'override', 'migration'}}
+                item['models'] = [overrides.get(m['id'], m) for m in catalog]
+                item['error'] = None
+                import datetime
+                item['refreshed_at'] = datetime.datetime.now(datetime.UTC).isoformat()
+            if old and old['base_url'] == base and old['protocol'] == item['protocol'] and old.get('preferred_model'):
+                item['preferred_model'] = old['preferred_model']
+            if selected:
+                from .catalog import model_item
+                if not any(m['id'] == selected for m in item['models']):
+                    item['models'].append(model_item(selected))
+                item['preferred_model'] = selected
+                active = state['defaults'].get('selection')
+                if value.get('use_as_default') or not active or active.get('connection') == identity:
+                    state['defaults']['selection'] = {'connection':identity, 'model':selected}
             state['connections'] = [c for c in state['connections'] if c['id'] != identity]+[item]
         result = self.mutate(change)
         self.cleanup_credentials(identity)
@@ -219,8 +246,9 @@ class ModelStore:
     def delete_connection(self, identity):
         def change(state):
             values = [state['defaults'], *state['overrides'].values()]
-            if any((v.get('selection') or {}).get('connection') == identity for v in values):
-                raise ValueError('connection_in_use')
+            for setting in values:
+                if (setting.get('selection') or {}).get('connection') == identity:
+                    setting['selection'] = None
             state['connections'] = [c for c in state['connections'] if c['id'] != identity]
         result = self.mutate(change)
         self.cleanup_credentials(identity)
